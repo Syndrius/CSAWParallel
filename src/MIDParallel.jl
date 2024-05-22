@@ -1,32 +1,29 @@
+"""
+
+Parallel extension to MID. Matrices are constructed in parallel with MPI. Radial grid is split into nproc segments speeding up the construction.
+
+Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires that Petsc, Slepc and MPI are all installed externally to julia.
+
+
+"""
+
 module MIDParallel
 
-"""
 
-This might actually be working now. (at least on Mac!)
+include("ParSpectrum/ParSpectrum.jl")
 
-TODO
- - test if slepc is actually faster than arpack.
- - Test on Pc, Probably requires re-installing stuff and rebuilding petsc/slepc
- - write bash script/run convergence tests
- - Fill in docstrings etc and neaten up
- - Clarify examples of this code working.
+using MIDParallel.ParSpectrum; export par_construct
+using MIDParallel.ParSpectrum; export par_solve
+using MIDParallel.ParSpectrum; export par_construct_and_solve
 
 
-"""
+include("ParIo/ParIo.jl")
 
-#this package is cooked, cannot seem to find the functions when run, not sure why, not sure how to fix.
-#fixed it, when adding a custom package, need to not add but dev it. otherwise julia thinks it is perfect and seems to never check for changes.
-
-#may be better to move some of these gaussina quad stuff purely to inputs so we can just use MID functions, we will have to export MID functions then though
-#so this works, obvs without registering MID, we have to add this locally, ie Pkg.add ~/phd/MID or whatever
-
-include("Parallel/Parallel.jl")
-
-using MIDParallel.Parallel; export par_construct
-using MIDParallel.Parallel; export par_solve
-using MIDParallel.Parallel; export par_construct_and_solve
-using MIDParallel.Parallel; export par_construct_to_file
-using MIDParallel.Parallel; export par_solve_from_file
+using MIDParallel.ParIo; export par_construct_to_file
+using MIDParallel.ParIo; export par_solve_from_file
+using MIDParallel.ParIo; export par_spectrum_from_file
+using MIDParallel.ParIo; export par_vals_from_file
+using MIDParallel.ParIo; export par_funcs_from_file
 
 
 end
