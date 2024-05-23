@@ -31,31 +31,68 @@ export par_solve
 
 export par_construct_and_solve
 export par_construct_to_file
+export par_construct_to_file_from_inputs
 export par_solve_from_file
 
 
 #cannot get this to work, Julia MPI defaults to MPICH, and cannot easily be changed, Petsc is unable to install with MPICH for some reason.
-function par_solve_from_file(; dir::String)
+function par_solve_from_file(; dir::String, grids::MID.GridsT, R0::Float64, σ::Float64)
 
 
     file_inds = dir * @sprintf("inds.dat")
     file_data = dir * @sprintf("data.dat")
 
     rows, cols = eachrow(readdlm(file_inds, ',', Int64))
-    #diffucult to have access to n when solving from file, test just doing this for now
-    #this will hopefully change when the problem is written to file etc.
-    n = maximum(cols) #this is giving something cooked???? Could be a srs worry.
-    n=400 #hard code for now, needs to change
-    R0 = 10.0
-    tae_freq = (0.381 / R0)^2
+    n = 2 * grids.rd.N * grids.pmd.count * grids.tmd.count
+    
     Wdata, Idata = eachrow(readdlm(file_data, ',', ComplexF64))
     MPI.Init()
     #this is almost certainly solving the same matrix on each proc.
-    par_solve(rows, cols, Wdata, Idata, R0=R0, n=n, dir=dir, σ=tae_freq)
+    par_solve(rows, cols, Wdata, Idata, R0=R0, n=n, dir=dir, σ=σ)
 
     MPI.Finalize() 
 
 end
+
+#for writing shit straight to file so we can avoid many of the issues.
+function par_construct_to_file_from_inputs(; dir::String)
+
+    MPI.Init()
+
+    comm = MPI.COMM_WORLD
+    rank = MPI.Comm_rank(comm)
+
+    root = 0
+
+    prob, grids = inputs_from_file(dir=dir)
+    #something may be cooked here!
+    rows, cols, Wdata, Idata = par_construct(prob=prob, grids=grids)
+    MPI.Barrier(comm) #not sure if this is needed!
+    #for some reason MPI used Int32's
+    global_counts = Int32.(MPI.Allgather([length(rows)], comm))
+
+    global_rows = MPI.Gatherv(rows, global_counts, root, comm)
+    global_cols = MPI.Gatherv(cols, global_counts, root, comm)
+    global_Wdata = MPI.Gatherv(Wdata, global_counts, root, comm)
+    global_Idata = MPI.Gatherv(Idata, global_counts, root, comm)
+    
+    #I think this would be better if it was written as a single file with 4 columns
+    if rank == root
+        #may want to make the file more sophisticated so that we separate the file from the solutions.
+        file_name = dir*@sprintf("inds.dat")
+        open(file_name, "w") do file
+            writedlm(file, [global_rows, global_cols], ",")
+        end 
+
+        file_name = dir*@sprintf("data.dat")
+        open(file_name, "w") do file
+            writedlm(file, [global_Wdata, global_Idata], ",")
+        end 
+    end
+    MPI.Finalize()
+
+end
+
 
 #for writing shit straight to file so we can avoid many of the issues.
 function par_construct_to_file(; prob::MID.ProblemT, grids::MID.GridsT, dir::String)

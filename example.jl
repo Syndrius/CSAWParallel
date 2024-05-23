@@ -14,7 +14,7 @@ using MIDParallel
 #works perfectly with a single proc. Something cooked is going on.
 #hopefully segfaults are just due to matrices being cooked for more procs, as evals seem to be getting closer to zero.
 
-N = 100; 
+N = 10; 
 #the collect is a bit annoying, but ok because we will typically use a clustered grid.
 rgrid = collect(LinRange(0, 1, N));
 

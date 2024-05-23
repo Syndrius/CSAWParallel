@@ -26,6 +26,7 @@ using MIDParallel.Parallel; export par_construct
 using MIDParallel.Parallel; export par_solve
 using MIDParallel.Parallel; export par_construct_and_solve
 using MIDParallel.Parallel; export par_construct_to_file
+using MIDParallel.Parallel; export par_construct_to_file_from_inputs
 using MIDParallel.Parallel; export par_solve_from_file
 
 

@@ -36,8 +36,8 @@ function par_construct(; prob::MID.ProblemT, grids::MID.GridsT, file_base="data/
     #now each proc takes there appropriate part of the grid
     r_start = splits[rank+1] + 1
     r_end = splits[rank+2]
-    println("r_start = $r_start for proc $rank")
-    println("r_end = $r_end for proc $rank")
+    #println("r_start = $r_start for proc $rank")
+    #println("r_end = $r_end for proc $rank")
 
     rows, cols, Wdata, Idata = worker_construct(prob=prob, grids=grids, r_start=r_start, r_end=r_end)
 

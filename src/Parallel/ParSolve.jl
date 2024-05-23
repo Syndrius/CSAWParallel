@@ -8,9 +8,9 @@ function par_solve(rows, cols, Wdata, Idata; σ, nev=10, R0, n, dir::String)
     
     #display("Big Boi")
     #eps_nev doesn't seem to do anything???
-    #slepcargs = @sprintf("-eps_target %s -eps_nev %s -st_pc_factor_shift_type NONZERO -st_type sinvert ", σ, nev)
+    slepcargs = @sprintf("-eps_target %s -eps_nev %s -st_pc_factor_shift_type NONZERO -st_type sinvert ", σ, nev)
     #running in parallel with -st_type sinvert gives very large evals, with eps_harmonic we get ve small evals, neither is good!
-    slepcargs = @sprintf("-eps_nev 3 -eps_target %s -eps_view -eps_harmonic", σ)
+    #slepcargs = @sprintf("-eps_nev 3 -eps_target %s -eps_view -st_pc_factor_shift_type NONZERO", σ)
     
     #if rank == root
     #    display(slepcargs)
@@ -40,6 +40,7 @@ function par_solve(rows, cols, Wdata, Idata; σ, nev=10, R0, n, dir::String)
     #MPI.Barrier(comm)
     eps = create_eps(W, I; auto_setup=true)
 
+    #so this doesn't seem to work on Pc now...
     solve!(eps)
     
 

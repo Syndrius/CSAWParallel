@@ -497,6 +497,7 @@ version = "2024.1.0+0"
 [[deps.MPI]]
 deps = ["Distributed", "DocStringExtensions", "Libdl", "MPICH_jll", "MicrosoftMPI_jll", "OpenMPI_jll", "Pkg", "Random", "Requires", "Serialization", "Sockets"]
 git-tree-sha1 = "d56a80d8cf8b9dc3050116346b3d83432b1912c0"
+pinned = true
 uuid = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 version = "0.19.2"
 
