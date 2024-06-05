@@ -74,6 +74,7 @@ function worker_construct(; prob::MID.ProblemT, grids::MID.GridsT, r_start::Int6
     #the test function.
     Ψ = zeros(ComplexF64, 9, 4, grids.rd.gp)   
 
+    rgrid = MID.construct_rgrid(grids)
 
 
     #For parallel we don't predefine the array size, as each proc will have a different interaction 
@@ -103,7 +104,7 @@ function worker_construct(; prob::MID.ProblemT, grids::MID.GridsT, r_start::Int6
     #only relevant chunk of radial grid is considered.
     for i in r_start:r_end
 
-        r, dr = MID.local_to_global(i, ξ, grids.rd.grid)
+        r, dr = MID.local_to_global(i, ξ, rgrid)
 
         jac = dr/2 #following thesis!
 
