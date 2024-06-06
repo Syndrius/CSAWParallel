@@ -39,16 +39,22 @@ Computes the spectrum in parallel, and writes solution to file.
 - nev::Int64 Number of eigenvalues to solve for.
 - dir::String Directory the results are written to.
 """
-function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0::Float64, nev=20::Int64, dir::String)
+function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0::Float64, nev=5::Int64, dir::String)
 
     MPI.Init()
 
     #construct the matrices, each proc has a subset of the coo data.        
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        display("Constructing...")
+    end
     rows, cols, Wdata, Idata = par_construct(prob=prob, grids=grids)
 
     #compute the matrix size for creating the Petsc matrix.
     n = 2 * grids.rd.N * grids.pmd.count * grids.tmd.count
 
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        display("Solving...")
+    end
     #solve the matrix, this writes to file
     par_solve(rows, cols, Wdata, Idata, σ=σ, nev=nev, n=n, dir=dir)
 

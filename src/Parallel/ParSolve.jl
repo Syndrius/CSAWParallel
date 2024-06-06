@@ -1,7 +1,7 @@
 
 #solves in parallel using Slepc
 
-function par_solve(rows, cols, Wdata, Idata; σ, nev=10, R0, n, dir::String)
+function par_solve(rows, cols, Wdata, Idata; σ, nev=5, R0, n, dir::String)
     comm = MPI.COMM_WORLD
     rank = MPI.Comm_rank(comm)
     root = 0

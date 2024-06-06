@@ -20,7 +20,10 @@ prob = init_problem(q=Axel_q, geo=geo);
 grids = init_grids(N=N, mstart=2, mcount=2, nstart=-2, ncount=1);
 tae_freq = (0.381 / geo.R0)^2; #previously found tae_freq.
 
-inputs_to_file(prob=prob, grids=grids, dir="data/example/");
+#looks like full path is needed... a bit annoying tbh.
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+
+inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
 """
 Now execute the command in parallel from terminal/bash script.
@@ -32,10 +35,10 @@ See convergence.sh for other examples of running in parallel.
 """
 
 #now we can read the data in. first the eigenvalues,
-ω = par_vals_from_file("data/example/vals.dat", geo.R0);
+ω = par_vals_from_file(dir_base*"vals.dat", geo.R0);
 
 #then the efuncs
-ϕ = par_funcs_from_file("data/example/funcs.dat", length(ω), N, grids.pmd.count, grids.tmd.count);
+ϕ = par_funcs_from_file(dir_base*"funcs.dat", length(ω), N, grids.pmd.count, grids.tmd.count);
 
 #now we can plot the TAE, which will be the first efuncs as we have specified the desired frequency to solve for.
 display(ω[1]); #should find a tae with normalised frequency 0.3812

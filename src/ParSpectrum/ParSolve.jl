@@ -11,7 +11,7 @@ Solves generalised eigenvalue problem in parallel using Slepc.
 - n::Int64 Size of the matrix.
 - dir::String Directory the results are written to.
 """
-function par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{ComplexF64}, Idata::Vector{ComplexF64}; σ::Float64, nev=20::Int64, n::Int64, dir::String)
+function par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{ComplexF64}, Idata::Vector{ComplexF64}; σ::Float64, nev=5::Int64, n::Int64, dir::String)
 
 
     #eigenvalues are written in matlab format as this offers greater precision than default, 
@@ -22,7 +22,9 @@ function par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{Compl
 
     #these are combined with nev and σ, specifiying the setup for slepc.
     #eps_harmonics means we are searching inside the spectrum.
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -eps_harmonic", nev, σ) * evals_str * efuncs_str
+    #-st_type sinvert
+    #slepcargs = @sprintf("-eps_nev %d -eps_target %s -eps_harmonic", nev, σ) * evals_str * efuncs_str
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert", nev, σ) * evals_str * efuncs_str
     
 
     SlepcInitialize(slepcargs)
@@ -42,10 +44,15 @@ function par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{Compl
     #we create the eps object, auto setup uses the slepcargs above.
     eps = create_eps(W, I; auto_setup=true)
 
+    
     #solve the problem.
     #slepc args above will automatically write the solution to file.
     #note sometimes nev is ignored and solution just gives us the number of converged eigenvalues.
     solve!(eps)
+
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        display(EPSGetConverged(eps))
+    end
     
     #free the memory used.
     destroy!(W)

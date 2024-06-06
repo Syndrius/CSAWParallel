@@ -28,7 +28,7 @@ Computes the spectrum in parallel based on inputs read from file.
 - freq::Float64 Frequency for 'shift and invert', typically this is the TAE frequency.
 - nev::Int64 Number of eigenvalues to solve for.
 """
-function par_spectrum_from_file(; dir::String, freq::Float64, nev=20::Int64)
+function par_spectrum_from_file(; dir::String, freq::Float64, nev=5::Int64)
 
     prob, grids = inputs_from_file(dir=dir)
 

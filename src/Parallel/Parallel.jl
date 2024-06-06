@@ -1,5 +1,5 @@
 
-module Parallel
+module Parallel #this shouldn't exist I think!
 
 #so this works, obvs without registering MID, we have to add this locally, ie Pkg.add ~/phd/MID or whatever
 using MID
