@@ -21,7 +21,8 @@ grids = init_grids(N=N, mstart=2, mcount=2, nstart=-2, ncount=1);
 tae_freq = (0.381 / geo.R0)^2; #previously found tae_freq.
 
 #looks like full path is needed... a bit annoying tbh.
-dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+dir_base = "data/example/"
 
 inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
