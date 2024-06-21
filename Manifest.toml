@@ -197,6 +197,11 @@ deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
 
+[[deps.Elliptic]]
+git-tree-sha1 = "71c79e77221ab3a29918aaf6db4f217b89138608"
+uuid = "b305315f-e792-5b7a-8f41-49f472929428"
+version = "1.0.1"
+
 [[deps.EpollShim_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "8e9441ee83492030ace98f9789a654a6d0b1f643"
@@ -537,7 +542,7 @@ uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.3"
 
 [[deps.MID]]
-deps = ["Accessors", "Arpack", "DelimitedFiles", "FFTW", "FastGaussQuadrature", "LaTeXStrings", "LinearAlgebra", "Plots", "Printf", "SparseArrays"]
+deps = ["Accessors", "Arpack", "DelimitedFiles", "Elliptic", "FFTW", "FastGaussQuadrature", "LaTeXStrings", "LinearAlgebra", "Plots", "Printf", "SparseArrays"]
 path = "../MID"
 uuid = "864cfd1d-2a39-4b19-8808-16c25e50ed02"
 version = "1.0.0-DEV"

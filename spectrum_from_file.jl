@@ -17,4 +17,5 @@ using MIDParallel
 dir = ARGS[1]
 freq = ARGS[2]
 
-par_spectrum_from_file(dir=dir, freq=parse(Float64, freq))
+#increased number of evals.
+par_spectrum_from_file(dir=dir, freq=parse(Float64, freq), nev=50)

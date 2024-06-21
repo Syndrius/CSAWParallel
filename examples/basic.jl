@@ -41,6 +41,13 @@ See convergence.sh for other examples of running in parallel.
 #then the efuncs
 ϕ = par_funcs_from_file(dir_base*"funcs.dat", length(ω), N, grids.pmd.count, grids.tmd.count);
 
+#or we can read a single eigenfunction, which is useful for larger datasets, here we read the third eigenvalue.
+ϕ3 = par_func_from_file(dir_base*"funcs.dat", 3, N, grids.pmd.count, grids.tmd.count);
+
 #now we can plot the TAE, which will be the first efuncs as we have specified the desired frequency to solve for.
 display(ω[1]); #should find a tae with normalised frequency 0.3812
 plot_potential(grids=grids, ϕ=ϕ, ind=1, n=1);
+
+#the individual eigenfunction only contains a single index so we pass in ind=1
+plot_potential(grids=grids, ϕ=ϕ3, ind=1, n=1);
+

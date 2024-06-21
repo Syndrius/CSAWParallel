@@ -18,6 +18,7 @@ export par_spectrum_from_file
 
 export par_vals_from_file
 export par_funcs_from_file
+export par_func_from_file
 
 
 """
@@ -160,6 +161,39 @@ function par_funcs_from_file(filename::String, nevals::Int64, nr::Int64, nm::Int
     end
 
     return reconstruct_phi(efuncs, nevals, nr, nm, nn)
+
+end
+
+
+
+"""
+Reads a single eigenfunction from file after they have been output by the parallel solver. Returns the reconstructed form of the eigenfunction. Much faster and more memory efficient than reading all eigenfucntions.
+
+# Args
+- filname::String File where eigenfunctions are stored.
+- ind::Int64 Index of desired eigenfunction.
+- nr::Int64 Number of radial grid points, used for reconstructing.
+- nm::Int64 Number of poloidal modes, used for reconstructing.
+- nn::Int64 Number of toroidal modes, used for reconstructing.
+"""
+function par_func_from_file(filename::String, ind::Int64, nr::Int64, nm::Int64, nn::Int64)
+
+    n = 2 * nr * nm * nn #size of matrix, note reconstruct phi removes the derivatives.
+
+    efunc = open(filename, "r") do file
+        efunc = Array{ComplexF64}(undef, n, 1) 
+
+        s = readlines(file)
+        for (i, str) in enumerate(split.(s[3+(ind-1)*(n+2):2*ind+ind*n]))
+            real = parse(Float64, str[1])
+            imag = parse(Float64, str[2]) #* 1im
+            efunc[i, 1] = real + imag*1im
+        end
+        
+        return efunc
+    end
+
+    return reconstruct_phi(efunc, 1, nr, nm, nn)
 
 end
 
