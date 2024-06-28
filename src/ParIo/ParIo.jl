@@ -137,9 +137,9 @@ Reads the eigenfunctions from file after they have been output by the parallel s
 - nm::Int64 Number of poloidal modes, used for reconstructing.
 - nn::Int64 Number of toroidal modes, used for reconstructing.
 """
-function par_funcs_from_file(filename::String, nevals::Int64, nr::Int64, nm::Int64, nn::Int64)
+function par_funcs_from_file(filename::String, nevals::Int64, grids::GridsT)
 
-    n = 2 * nr * nm * nn #size of matrix, note reconstruct phi removes the derivatives.
+    n = matrix_dim(grids) #size of matrix, note reconstruct phi removes the derivatives.
 
     efuncs = open(filename, "r") do file
         efuncs = Array{ComplexF64}(undef, n, nevals) 
@@ -160,7 +160,7 @@ function par_funcs_from_file(filename::String, nevals::Int64, nr::Int64, nm::Int
         return efuncs
     end
 
-    return reconstruct_phi(efuncs, nevals, nr, nm, nn)
+    return reconstruct_phi(efuncs, nevals, grids)
 
 end
 
@@ -176,9 +176,9 @@ Reads a single eigenfunction from file after they have been output by the parall
 - nm::Int64 Number of poloidal modes, used for reconstructing.
 - nn::Int64 Number of toroidal modes, used for reconstructing.
 """
-function par_func_from_file(filename::String, ind::Int64, nr::Int64, nm::Int64, nn::Int64)
+function par_func_from_file(filename::String, ind::Int64, grids::GridsT)
 
-    n = 2 * nr * nm * nn #size of matrix, note reconstruct phi removes the derivatives.
+    n = matrix_dim(grids) #size of matrix, note reconstruct phi removes the derivatives.
 
     efunc = open(filename, "r") do file
         efunc = Array{ComplexF64}(undef, n, 1) 
@@ -193,7 +193,7 @@ function par_func_from_file(filename::String, ind::Int64, nr::Int64, nm::Int64, 
         return efunc
     end
 
-    return reconstruct_phi(efunc, 1, nr, nm, nn)
+    return reconstruct_phi(efunc, 1, grids)
 
 end
 

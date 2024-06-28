@@ -39,8 +39,9 @@ Computes the spectrum in parallel, and writes solution to file.
 - dir::String Directory the results are written to.
 """
 #new version that uses petsc matrices entirely to try and reduce memory usage.
-function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0::Float64, nev=5::Int64, dir::String)
+function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0::Float64, nev=50::Int64, dir::String)
 
+    target_freq = σ^2 / prob.geo.R0^2 
     MPI.Init()
     #eigenvalues are written in matlab format as this offers greater precision than default, 
     #and is easier to read from file
@@ -52,12 +53,13 @@ function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0
     #eps_harmonics means we are searching inside the spectrum.
     #-st_type sinvert
     #slepcargs = @sprintf("-eps_nev %d -eps_target %s -eps_harmonic", nev, σ) * evals_str * efuncs_str
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert", nev, σ) * evals_str * efuncs_str
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert", nev, target_freq) * evals_str * efuncs_str
     
     #this should also init petsc
     SlepcInitialize(slepcargs)
     #compute the matrix size for creating the Petsc matrix.
-    n = 2 * grids.rd.N * grids.pmd.count * grids.tmd.count
+    n = matrix_dim(grids) #should work for both grids now!
+    #n = 2 * grids.r.N * grids.pmd.count * grids.tmd.count
     W = create_matrix(n, n, auto_setup=true)
     I = create_matrix(n, n, auto_setup=true)
 
