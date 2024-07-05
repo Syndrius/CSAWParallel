@@ -42,7 +42,7 @@ See convergence.sh for other examples of running in parallel.
 ϕ = par_funcs_from_file(dir_base*"funcs.dat", length(ω), grids);
 
 #or we can read a single eigenfunction, which is useful for larger datasets, here we read the third eigenvalue.
-ϕ3 = par_func_from_file(dir_base*"funcs.dat", 3, grids);
+ϕ3 = par_func_from_file(dir_base*"funcs.dat", 7, grids);
 
 #now we can plot the TAE, which will be the first efuncs as we have specified the desired frequency to solve for.
 display(ω[1]); #should find something that is kinda like a tae with ω=0.396
