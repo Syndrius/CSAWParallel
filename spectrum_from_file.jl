@@ -18,4 +18,5 @@ dir = ARGS[1]
 freq = ARGS[2]
 
 #increased number of evals.
-par_spectrum_from_file(dir=dir, freq=parse(Float64, freq), nev=50)
+#should have that as an input tbh!
+par_spectrum_from_file(dir=dir, freq=parse(Float64, freq), nev=200)

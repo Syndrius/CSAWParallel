@@ -28,6 +28,8 @@ using MIDParallel.ParIo; export par_spectrum_from_file
 using MIDParallel.ParIo; export par_vals_from_file
 using MIDParallel.ParIo; export par_funcs_from_file
 using MIDParallel.ParIo; export par_func_from_file
+using MIDParallel.ParIo; export reconstruct_continuum_from_file
+using MIDParallel.ParIo; export reconstruct_slab_continuum_from_file
 
 
 end

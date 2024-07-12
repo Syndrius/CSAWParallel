@@ -90,16 +90,16 @@ end
 
 #now lets see if we can make a verification plot!
 
-Nθ = 50
+Nθ = 100
 
 θgrid = init_fem_grid(N=Nθ, pf=1)
 ζgrid = init_sm_grid(start=-1, count = 1)
 geo = GeoParamsT(R0=10.0);
 
-dir_base = "/scratch/y08/mt3516/ffs_verification/theta50/"
+dir_base = "/scratch/y08/mt3516/ffs_verification/theta100/"
 
 
-Nlist = [500, 1000, 1500, 2000, 3000, 4000]
+Nlist = [500, 1000, 1500, 2000, 3000]#, 4000]
 δlist = [-4.0e-7, -4.0e-8, -4.0e-9, -4.0e-10, -4.0e-11]
 
 ωlist = zeros(ComplexF64, length(Nlist), length(δlist));
@@ -128,12 +128,14 @@ for (i, N) in enumerate(Nlist)
     end
 end
 
-
+#ran out of mem for 4000 case...
 p = scatter()
 #pretty close, but still not perf :(
 #may need to check if the tae is actually the first one? perhap??
 #will still need to compare with Axel's case, and check example with the off-diagonal terms.
 #this converges to 0.018345, %diff of ~4.17, not so bad.
+#this may have to be good enough tbh. damping is le cooked.
+#convergence is identical with Nθ=100!
 for i in 1:length(δlist)
     scatter!(Nlist, imag.(ωlist[:, i]) ./ real.(ωlist[:, 1]))
 end

@@ -20,6 +20,10 @@ export par_vals_from_file
 export par_funcs_from_file
 export par_func_from_file
 
+#Need to be moved!
+export reconstruct_continuum_from_file
+export reconstruct_slab_continuum_from_file
+
 
 """
 Computes the spectrum in parallel based on inputs read from file.
@@ -196,6 +200,132 @@ function par_func_from_file(filename::String, ind::Int64, grids::GridsT)
     return reconstruct_phi(efunc, 1, grids)
 
 end
+
+
+"Should not be here!!!"
+
+#reconstructs one at a time.
+#could almost read the grids as well??
+#scope of this is fked.
+function reconstruct_continuum_from_file(dir, grids::MID.FFSGridsT; filename=nothing, ymin=-0.05, ymax=1.05)
+    omdata = zeros(length(ω)) 
+    #TODO
+    rdata = zeros(length(ω))
+    #col = zeros(length(ω))
+
+    #nlist = (grids.tmd.start:grids.tmd.incr:grids.tmd.start + grids.tmd.incr * grids.tmd.count)[1:end-1]
+
+    rgrid, _, _, nlist, _= MID.instantiate_grids(grids)
+
+    col = Tuple{Int, Int}[]
+
+    #wont generalise to clustred grids obvs.
+    #rgrid = LinRange(0, 1, grids.rd.N)
+    #θgrid = LinRange(0, 2π, grids.θd.N)
+
+    for i in 1:1:length(ω)
+
+        rm = zeros(Int64, grids.θ.N, grids.ζ.count)
+        ϕm = zeros(Float64, grids.θ.N, grids.ζ.count)
+
+        for j in 1:grids.θ.N, k in 1:grids.ζ.count
+
+            rm[j, k] = argmax(abs.(real.(ϕms[i, :, j, k])))
+            ϕm[j, k] = abs.(real.(ϕms[i, rm[j, k], j, k]))
+        end
+
+        max_mode = argmax(ϕm)
+
+        rdata[i] = rgrid[rm[max_mode]]
+        #col[i] = (mlist[max_mode[1]], nlist[max_mode[2]])
+        #mod is there to correct the mode labels, -1 for julia indexing.
+        #this is obvs flawed as we can only resolve Nθ modes, but this should be fine for the neighbouring modes to pf.
+        #still not perf, one particular issue is the negative mode numbers.
+        #mlab = mod(max_mode[1]-1 + grids.θ.pf, grids.θ.N)
+        mlab = mod(max_mode[1]-1, grids.θ.N)
+        if mlab > grids.θ.N/2
+            mlab = mlab - grids.θ.N
+        end
+
+        #push!(col, (mod(max_mode[1]-1 + grids.θ.pf, grids.θ.N), nlist[max_mode[2]]))
+        push!(col, (mlab, nlist[max_mode[2]]))
+        #push!(col, (max_mode, nlist[max_mode[2]]))
+        #probably don't need this anymore tbh.
+        omdata[i] = abs.(ω[i]) #already normalised now!
+    end
+
+    p = scatter(rdata, omdata, group=col, ylimits=(ymin, ymax))#, xlabel=L"r", ylabel=L"\frac{\omega  R_0}{v_A}", yguidefontrotation=0, left_margin=6Plots.mm, yguidefontsize=16, xguidefontsize=18, xtickfontsize=10, ytickfontsize=10, dpi=600, legendfontsize=10)
+    #return rdata, omdata, col
+    display(p)
+    if !isnothing(filename)
+        savefig(p, filename)
+    end
+end
+
+
+#i guess this assumes parallel lol, should be somewhere else lol.
+function reconstruct_slab_continuum_from_file(dir, grids::MID.FFSGridsT, R0; filename=nothing, ymin=-0.05, ymax=1.05)
+
+    ω = par_vals_from_file(dir*"vals.dat", R0);
+    num_vals = length(ω)
+    omdata = zeros(num_vals) 
+    rdata = zeros(num_vals)
+    #col = zeros(length(ω))
+
+    #nlist = (grids.tmd.start:grids.tmd.incr:grids.tmd.start + grids.tmd.incr * grids.tmd.count)[1:end-1]
+
+    rgrid, _, _, nlist, _= MID.instantiate_grids(grids)
+
+    col = Tuple{Int, Int}[]
+
+    #wont generalise to clustred grids obvs.
+    #rgrid = LinRange(0, 1, grids.rd.N)
+    #θgrid = LinRange(0, 2π, grids.θd.N)
+
+    for i in 1:1:num_vals
+
+        ϕ = par_func_from_file(dir*"funcs.dat", i, grids)
+        ϕms = MID.mode_structure(ϕ, grids)
+
+        rm = zeros(Int64, grids.θ.N, grids.ζ.count)
+        ϕm = zeros(Float64, grids.θ.N, grids.ζ.count)
+
+        for j in 1:grids.θ.N, k in 1:grids.ζ.count
+
+            rm[j, k] = argmax(abs.(real.(ϕms[1, :, j, k])))
+            ϕm[j, k] = abs.(real.(ϕms[1, rm[j, k], j, k]))
+        end
+
+        max_mode = argmax(ϕm)
+
+        rdata[i] = rgrid[rm[max_mode]]
+        #col[i] = (mlist[max_mode[1]], nlist[max_mode[2]])
+        #mod is there to correct the mode labels, -1 for julia indexing.
+        #this is obvs flawed as we can only resolve Nθ modes, but this should be fine for the neighbouring modes to pf.
+        #still not perf, one particular issue is the negative mode numbers.
+        #mlab = mod(max_mode[1]-1 + grids.θ.pf, grids.θ.N)
+        mlab = mod(max_mode[1]-1, grids.θ.N)
+        
+        if mlab > grids.θ.N/2
+            mlab = mlab - grids.θ.N
+        end
+
+        #push!(col, (mod(max_mode[1]-1 + grids.θ.pf, grids.θ.N), nlist[max_mode[2]]))
+        push!(col, (mlab, nlist[max_mode[2]]))
+        #push!(col, (max_mode, nlist[max_mode[2]]))
+        #probably don't need this anymore tbh.
+        omdata[i] = abs.(ω[i]) / rdata[i] #already normalised now!
+    end
+
+    p = scatter(rdata, omdata, group=col, ylimits=(ymin, ymax))#, xlabel=L"r", ylabel=L"\frac{\omega  R_0}{v_A}", yguidefontrotation=0, left_margin=6Plots.mm, yguidefontsize=16, xguidefontsize=18, xtickfontsize=10, ytickfontsize=10, dpi=600, legendfontsize=10)
+    #return rdata, omdata, col
+    display(p)
+    if !isnothing(filename)
+        savefig(p, filename)
+    end
+    return omdata
+end
+
 
 
 end
