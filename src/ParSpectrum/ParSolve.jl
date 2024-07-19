@@ -57,6 +57,7 @@ Solves generalised eigenvalue problem in parallel using Slepc.
 function old_par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{ComplexF64}, Idata::Vector{ComplexF64}; σ::Float64, nev=5::Int64, n::Int64, dir::String)
 
 
+    
     #eigenvalues are written in matlab format as this offers greater precision than default, 
     #and is easier to read from file
     evals_str = " -eps_view_values :" * dir * "vals.dat:ascii_matlab"
@@ -67,9 +68,9 @@ function old_par_solve(rows::Vector{Int64}, cols::Vector{Int64}, Wdata::Vector{C
     #eps_harmonics means we are searching inside the spectrum.
     #-st_type sinvert
     #slepcargs = @sprintf("-eps_nev %d -eps_target %s -eps_harmonic", nev, σ) * evals_str * efuncs_str
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert", nev, σ) * evals_str * efuncs_str
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -eps_view", nev, σ) * evals_str * efuncs_str
     
-
+    #display(slepcargs)
     SlepcInitialize(slepcargs)
 
     #The two empty matrices are created.

@@ -53,7 +53,10 @@ function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0
     #eps_harmonics means we are searching inside the spectrum.
     #-st_type sinvert
     #slepcargs = @sprintf("-eps_nev %d -eps_target %s -eps_harmonic", nev, σ) * evals_str * efuncs_str
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert", nev, target_freq) * evals_str * efuncs_str
+    #-eps_view for solver stuff
+    #-memory_view for mem
+    #log_view for heaps of petsc info.
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view", nev, target_freq) * evals_str * efuncs_str
     
     #this should also init petsc
     SlepcInitialize(slepcargs)
@@ -67,7 +70,7 @@ function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Constructing...")
     end
-    par_construct(W, I, prob=prob, grids=grids)
+    #par_construct(W, I, prob=prob, grids=grids)
 
 
     
@@ -75,8 +78,9 @@ function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Solving...")
     end
+    #memory doubling does not seem to be in solve...
     #solve the matrix, this writes to file
-    par_solve(W, I)
+    #par_solve(W, I)
 
     destroy!(W)
     destroy!(I)
