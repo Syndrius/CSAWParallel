@@ -24,9 +24,9 @@ end
 # separate strings : `PetscInitialize(["-ksp_monitor_short", "-ksp_gmres_cgs_refinement_type", "refine_always")`
 PetscInitialize("-mat_view ::ascii_info")
 
-comm = MPI.COMM_WORLD
-rank = MPI.Comm_rank(comm) #rank of each worker
-nprocs = MPI.Comm_size(comm)
+#comm = MPI.COMM_WORLD
+#rank = MPI.Comm_rank(comm) #rank of each worker
+#nprocs = MPI.Comm_size(comm)
 
 # Number of mesh points and mesh step
 n = 10000
@@ -36,16 +36,17 @@ n = 10000
 A = MatCreate()
 b = VecCreate()
 
-local_n = get_local_rows(n, rank, nprocs)
+#local_n = get_local_rows(n, rank, nprocs)
 
 # Set the size of the different objects, leaving PETSC to decide how to distribute. Note that we should
 # set the number of preallocated non-zeros to increase performance.
-#MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, n, n)
-#VecSetSizes(b, PETSC_DECIDE, n)
-MatSetSizes(A, local_n, local_n, n, n)
-VecSetSizes(b, local_n, n)
+MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, n, n)
+VecSetSizes(b, PETSC_DECIDE, n)
+#MatSetSizes(A, local_n, local_n, n, n)
+#VecSetSizes(b, local_n, n)
 #local_m = MatGetOwnershipRangesColumn(A)
 
+display(MatGetOwnershipRange(A))
 
 #display("local size")
 #display((local_m, local_n))
