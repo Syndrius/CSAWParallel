@@ -4,9 +4,9 @@ Parallel extension to MID. Matrices are constructed in parallel with MPI. Radial
 
 Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires that Petsc, Slepc and MPI are all installed externally to julia.
 
- - Change construct to work only on each proc's part of the matrix
- - Can probably make Io more sophisticated using cka as a guide.
- - We have changed the target freq, this will cause issues for shell scripts.
+ - Add preallocation, will require
+ - Ghost cells
+ - computation of diagonal nz and off diagonal non-zeros.
 
 """
 
