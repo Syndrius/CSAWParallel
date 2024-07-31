@@ -29,7 +29,7 @@ rank = MPI.Comm_rank(comm) #rank of each worker
 nprocs = MPI.Comm_size(comm)
 
 # Number of mesh points and mesh step
-n = 1000000
+n = 10000
 Δx = 1. / (n - 1)
 
 # Create a matrix and a vector (you can specify the MPI communicator if you want)
