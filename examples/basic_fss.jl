@@ -13,13 +13,13 @@ using MIDParallel
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=100;
+Nr=25;
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
 rgrid = init_fem_grid(N=Nr)
-θgrid = init_sm_grid(start=2, count = 2)
-ζgrid = init_sm_grid(start=-2, count = 1)
+θgrid = init_sm_grid(start=2, count = 6)
+ζgrid = init_sm_grid(start=-2, count = 4)
 grids = init_grids(rgrid, θgrid, ζgrid);
 tae_freq = 0.381# / geo.R0)^2; #previously found tae_freq.
 
