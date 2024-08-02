@@ -7,14 +7,14 @@ using MIDParallel
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=50;
-Nθ=5
+Nr=25;
+Nθ=9
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
 rgrid = init_fem_grid(N=Nr)
 θgrid = init_fem_grid(N=Nθ, pf=2)
-ζgrid = init_sm_grid(start=-2, count = 1)
+ζgrid = init_sm_grid(start=-2, count = 3)
 grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 

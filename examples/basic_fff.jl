@@ -8,12 +8,13 @@ using MIDParallel
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=10;
-Nθ=2;
-Nζ=2;
+Nr=15;
+Nθ=6;
+Nζ=5;
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=10.0);
-prob = init_problem(q=Axel_q, geo=geo); 
+isl = IslandT(m0=5, n0=4, A=0.0001)
+prob = init_problem(q=Axel_q, geo=geo, isl=isl); 
 rgrid = init_fem_grid(N=Nr)
 θgrid = init_fem_grid(N=Nθ, pf=2)
 ζgrid = init_fem_grid(N=Nζ, pf=-2)

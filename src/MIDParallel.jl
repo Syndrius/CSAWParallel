@@ -7,6 +7,8 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - Add preallocation, will require
  - Ghost cells
  - computation of diagonal nz and off diagonal non-zeros.
+ - Currenly there is no possibility of construct or solve... have to do both with petsc.
+ - May want to preallocate the array that stores the nz_inds
 
 """
 
