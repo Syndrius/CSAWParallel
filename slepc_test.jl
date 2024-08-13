@@ -112,6 +112,8 @@ KSPSolve(ksp, b, x)
 
 # Access the solution (this part is under development), getting a Julia array; and then restore it
 array, ref = VecGetArray(x) # do something with array
+
+display(array)
 #@show array
 VecRestoreArray(x, ref)
 

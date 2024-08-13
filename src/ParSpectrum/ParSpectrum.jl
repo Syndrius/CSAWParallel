@@ -8,6 +8,7 @@ using FFTW
 using FastGaussQuadrature
 using SparseArrays
 using Printf
+using JLD2 #allows storage of 3d matrix in simple julia format.
 
 
 #note to get these files to work on mac, had to modify the load.jl files in both cases
@@ -92,7 +93,12 @@ function par_construct_and_solve(; prob::MID.ProblemT, grids::MID.GridsT, σ=0.0
     end
     #memory doubling does not seem to be in solve...
     #solve the matrix, this writes to file
-    par_solve(W, I)
+    par_solve(W, I, prob, grids, dir)
+
+
+    
+
+    #destroy!(eps)
 
     destroy!(W)
     destroy!(I)

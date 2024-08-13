@@ -8,9 +8,9 @@ using MIDParallel
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=15;
-Nθ=6;
-Nζ=5;
+Nr=10;
+Nθ=5;
+Nζ=3;
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=10.0);
 isl = IslandT(m0=5, n0=4, A=0.0001)
