@@ -9,6 +9,11 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - computation of diagonal nz and off diagonal non-zeros.
  - Currenly there is no possibility of construct or solve... have to do both with petsc.
  - May want to preallocate the array that stores the nz_inds
+ - may need different splitting for case when nprocs > Nr
+ - read efuncs in but only sample N rgrid points so we can actually store the damn things.
+ - Alternatively, use cka to try and write to file better, including constructing the continuum before writing to file
+ - Above doesn't look to bad in cka, see main.C and fft.C. Not sure how this will interact with petsc though.
+ - May also want to copy CKA's phase factor stuff, also in fft.C
 
 """
 
