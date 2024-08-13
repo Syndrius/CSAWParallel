@@ -29,7 +29,7 @@ PetscInitialize("-mat_view ::ascii_info")
 #nprocs = MPI.Comm_size(comm)
 
 # Number of mesh points and mesh step
-n = 1000000
+n = 11
 Δx = 1. / (n - 1)
 
 # Create a matrix and a vector (you can specify the MPI communicator if you want)
@@ -112,6 +112,8 @@ KSPSolve(ksp, b, x)
 
 # Access the solution (this part is under development), getting a Julia array; and then restore it
 array, ref = VecGetArray(x) # do something with array
+
+display(array)
 #@show array
 VecRestoreArray(x, ref)
 
