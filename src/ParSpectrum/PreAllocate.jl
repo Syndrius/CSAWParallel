@@ -4,37 +4,14 @@ Function that preallocates the number of non-zero elements in the petsc sparse m
 """
 function preallocate_matrix(grids::MID.GridsT)
 
-    comm = MPI.COMM_WORLD
-    rank = MPI.Comm_rank(comm) #rank of each worker
-    nprocs = MPI.Comm_size(comm) #total number of workers including root.
-    root = 0
-    counts = zeros(Int64, nprocs)
-    #splits = zeros(Int64, nprocs+1)
 
-    #here we split up the radial grid for each proc
-    if rank==root
-    
-        counts_guess = Int64(div(grids.r.N, nprocs, RoundDown))
-        Remainder    = Int64(grids.r.N - counts_guess*nprocs)
-        counts[:]   .= counts_guess
-        for i in 1:Remainder
-            counts[i] += 1
-        end
-        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
-        #splits[end] = grids.r.N - 1
-    end
-
-    #MPI.Bcast!(splits, root, comm)
-    MPI.Bcast!(counts, root, comm)
-
-    global_n = matrix_dim(grids) 
-
-    #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * compute_block_size(grids)
+    local_n = split_matrix(grids)
 
 
     W = MatCreate()
     I = MatCreate()
+
+    global_n = matrix_dim(grids) 
 
     #this step is probably not needed, but just certifies that we know exactly which part each proc is
     #handling.
@@ -45,6 +22,8 @@ function preallocate_matrix(grids::MID.GridsT)
     MatSetFromOptions(I)
 
     indstart, indend = MatGetOwnershipRange(W)
+
+    #@printf("Proc %d has %d to %d, local_n is %d\n", MPI.Comm_rank(MPI.COMM_WORLD), indstart, indend, local_n)
 
 
 
@@ -59,6 +38,10 @@ function preallocate_matrix(grids::MID.GridsT)
     #probbaly going to ignore the boundaries, will be much to complicated,
     #and for large grids should become negligible.
     boundary_inds = MID.compute_boundary_inds(grids)
+
+    #if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        #display(boundary_inds)
+    #end
 
     #iterate through each row owned by this processor.
     for i in 1:local_n
@@ -76,12 +59,15 @@ function preallocate_matrix(grids::MID.GridsT)
         #determines the non-zero indicies for this row.
         nz_inds = compute_nz_inds(i, grids, inds, boundary_inds)
             
+        
+
         #finds the number of nz's inside the processors diagonal,
         #see https://petsc.org/release/manualpages/Mat/MatMPIAIJSetPreallocation/
         #for example of diagonal and off-diagonal.
         dnnz[i] = length(nz_inds[indstart .< nz_inds .<= indend])
         onnz[i] = length(nz_inds[indstart .>= nz_inds])
         onnz[i] += length(nz_inds[nz_inds .> indend])
+
 
     end
 
@@ -95,6 +81,108 @@ function preallocate_matrix(grids::MID.GridsT)
 
 
     return W, I
+end
+
+
+#split the matrix up between the cores, setup such that each split is on a grid point.
+#think we can only split on a fem grid point tbh.
+function split_matrix(grids::MID.FFFGridsT)
+    comm = MPI.COMM_WORLD
+    rank = MPI.Comm_rank(comm) #rank of each worker
+    nprocs = MPI.Comm_size(comm) #total number of workers including root.
+    root = 0
+    counts = zeros(Int64, nprocs)
+    #splits = zeros(Int64, nprocs+1)
+
+    #here we split up the radial grid for each proc
+    if rank==root
+        grid_size = grids.r.N * grids.θ.N * grids.ζ.N
+        counts_guess = Int64(div(grid_size, nprocs, RoundDown))
+        Remainder    = Int64(grid_size - counts_guess*nprocs)
+        counts[:]   .= counts_guess
+        for i in 1:Remainder
+            counts[i] += 1
+        end
+        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
+        #splits[end] = grids.r.N - 1
+    end
+
+    #MPI.Bcast!(splits, root, comm)
+    MPI.Bcast!(counts, root, comm)
+
+    
+
+    #block size is how many points indicies per radial point.
+    local_n = counts[rank+1] * 8 # * grids.θ.N * grids.ζ.N
+
+    return local_n
+    #compute_block_size(grids)
+end
+
+function split_matrix(grids::MID.FFSGridsT)
+    comm = MPI.COMM_WORLD
+    rank = MPI.Comm_rank(comm) #rank of each worker
+    nprocs = MPI.Comm_size(comm) #total number of workers including root.
+    root = 0
+    counts = zeros(Int64, nprocs)
+    #splits = zeros(Int64, nprocs+1)
+
+    #here we split up the radial grid for each proc
+    if rank==root
+        grid_size = grids.r.N * grids.θ.N 
+        counts_guess = Int64(div(grid_size, nprocs, RoundDown))
+        Remainder    = Int64(grid_size - counts_guess*nprocs)
+        counts[:]   .= counts_guess
+        for i in 1:Remainder
+            counts[i] += 1
+        end
+        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
+        #splits[end] = grids.r.N - 1
+    end
+
+    #MPI.Bcast!(splits, root, comm)
+    MPI.Bcast!(counts, root, comm)
+
+    
+
+    #block size is how many points indicies per radial point.
+    local_n = counts[rank+1] * 4 * grids.ζ.count
+
+    return local_n
+    #compute_block_size(grids)
+end
+
+function split_matrix(grids::MID.FSSGridsT)
+    comm = MPI.COMM_WORLD
+    rank = MPI.Comm_rank(comm) #rank of each worker
+    nprocs = MPI.Comm_size(comm) #total number of workers including root.
+    root = 0
+    counts = zeros(Int64, nprocs)
+    #splits = zeros(Int64, nprocs+1)
+
+    #here we split up the radial grid for each proc
+    if rank==root
+        grid_size = grids.r.N 
+        counts_guess = Int64(div(grid_size, nprocs, RoundDown))
+        Remainder    = Int64(grid_size - counts_guess*nprocs)
+        counts[:]   .= counts_guess
+        for i in 1:Remainder
+            counts[i] += 1
+        end
+        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
+        #splits[end] = grids.r.N - 1
+    end
+
+    #MPI.Bcast!(splits, root, comm)
+    MPI.Bcast!(counts, root, comm)
+
+    
+
+    #block size is how many points indicies per radial point.
+    local_n = counts[rank+1] * 2 * grids.θ.count * grids.ζ.count
+
+    return local_n
+    #compute_block_size(grids)
 end
 
 
@@ -267,6 +355,7 @@ end
 
 
 #think this is good now as well.
+#there is a lot of repeated calculation in here, not sure it matters tho!
 function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     #each radial block is made up from Nθ rows of θ blocks.
@@ -289,6 +378,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     max_ss_block_row = grids.ζ.N
 
+
     #display(max_ss_block_row)
 
 
@@ -297,14 +387,18 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
     max_block_row = grids.r.N
 
     #sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
-    sub_block_row = mod(mod(indslocal[ind], sub_block_size), grids.θ.N) + 1
+    #sub_block_row = mod(mod(indslocal[ind], sub_block_size), grids.θ.N) + 1
+
+    sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
 
 
     #could probably be done in a single mod.
     #ss_block_row = Int64(mod(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.θ.N), grids.ζ.N)) + 1
     #ss_block_row = Int64(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.ζ.N)) + 1
 
-    ss_block_row = mod(mod(indslocal[ind], ss_block_size), grids.ζ.N) + 1
+    #ss_block_row = mod(mod(indslocal[ind], ss_block_size), grids.ζ.N) + 1
+
+    ss_block_row = Int64(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.ζ.N)) + 1
 
     """
     How this works:
@@ -365,11 +459,13 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     if block_row == 1
         nz_inds1 = filter(x->  !(x in boundary_inds),  sub_nz_inds)
+        #nz_inds1 = sub_nz_inds
         nz_inds2 = block_size .+ sub_nz_inds
         nz_inds = vcat(nz_inds1, nz_inds2)
 
     elseif block_row == 2
         nz_inds1 = filter(x->  !(x in boundary_inds),  sub_nz_inds)
+        #nz_inds1 = sub_nz_inds
         nz_inds2 = (block_row-1)*block_size .+ sub_nz_inds
         nz_inds3 = (block_row)*block_size .+ sub_nz_inds
 
@@ -379,6 +475,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
         nz_inds1 = (max_block_row-2)*block_size .+ sub_nz_inds
         nz_inds2 = filter(x->  !(x in boundary_inds), (max_block_row-1)*block_size .+ sub_nz_inds)
+        #nz_inds2 = (max_block_row-1)*block_size .+ sub_nz_inds
         nz_inds = vcat(nz_inds1, nz_inds2)
     
     elseif block_row == max_block_row-1
@@ -386,6 +483,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
         nz_inds1 = (max_block_row-3)*block_size .+ sub_nz_inds
         nz_inds2 = (max_block_row-2)*block_size .+ sub_nz_inds
         nz_inds3 = filter(x->  !(x in boundary_inds), (max_block_row-1)*block_size .+ sub_nz_inds)
+        #nz_inds3 = (max_block_row-1)*block_size .+ sub_nz_inds
         nz_inds = vcat(nz_inds1, nz_inds2, nz_inds3)
 
     else

@@ -4,11 +4,14 @@ Parallel extension to MID. Matrices are constructed in parallel with MPI. Radial
 
 Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires that Petsc, Slepc and MPI are all installed externally to julia.
 
- - Add preallocation, will require
- - Ghost cells
- - computation of diagonal nz and off diagonal non-zeros.
+
+ - Add Ghost cells
  - Currenly there is no possibility of construct or solve... have to do both with petsc.
  - May want to preallocate the array that stores the nz_inds
+ - could be handy to be able to pass petsc command line args into this.
+ - May want to try postprocess more efficiently if it takes a long time. Hopefully it is ok though.
+ - ParConstruct and PreAllocate could be cleaned up a bit.
+ - Splitting the grid more arbitrarily causes inefficeint indexing in main construction loop, may want to improve.
 
 """
 
@@ -17,21 +20,9 @@ module MIDParallel
 
 include("ParSpectrum/ParSpectrum.jl")
 
-using MIDParallel.ParSpectrum; export par_construct
-using MIDParallel.ParSpectrum; export par_solve
-using MIDParallel.ParSpectrum; export par_construct_and_solve
+using MIDParallel.ParSpectrum; export par_compute_spectrum
+using MIDParallel.ParSpectrum; export par_spectrum_from_file
 
-
-include("ParIo/ParIo.jl")
-
-using MIDParallel.ParIo; export par_construct_to_file
-using MIDParallel.ParIo; export par_solve_from_file
-using MIDParallel.ParIo; export par_spectrum_from_file
-using MIDParallel.ParIo; export par_vals_from_file
-using MIDParallel.ParIo; export par_funcs_from_file
-using MIDParallel.ParIo; export par_func_from_file
-using MIDParallel.ParIo; export reconstruct_continuum_from_file
-using MIDParallel.ParIo; export reconstruct_slab_continuum_from_file
 
 
 end

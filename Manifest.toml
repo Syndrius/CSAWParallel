@@ -554,7 +554,7 @@ uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.3"
 
 [[deps.MID]]
-deps = ["Accessors", "Arpack", "DelimitedFiles", "Elliptic", "FFTW", "FastGaussQuadrature", "LaTeXStrings", "LinearAlgebra", "Plots", "Printf", "SparseArrays"]
+deps = ["Accessors", "Arpack", "DelimitedFiles", "Elliptic", "FFTW", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "Plots", "Printf", "SparseArrays"]
 path = "../MID"
 uuid = "864cfd1d-2a39-4b19-8808-16c25e50ed02"
 version = "1.0.0-DEV"
