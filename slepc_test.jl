@@ -29,7 +29,7 @@ PetscInitialize("-mat_view ::ascii_info")
 #nprocs = MPI.Comm_size(comm)
 
 # Number of mesh points and mesh step
-n = 11
+n = 10000
 Δx = 1. / (n - 1)
 
 # Create a matrix and a vector (you can specify the MPI communicator if you want)
