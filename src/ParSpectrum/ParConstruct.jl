@@ -100,18 +100,27 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #now we loop through the grid
 
 
-
+    grid_points = matrix_to_grid(indstart, indend, grids)
     #for i in r_start:r_end, j in θ_start:θ_end, k in ζ_start:ζ_end #go to N for periodicity!
 
     #this is the fix. for splitting the grid up.
     #plus 1 for julia indexing
     #minus 1 on indend as it gives inclusive results.
-    for i in indstart+1:indend
+    for (rind, θind, ζind) in grid_points
 
         #this is probably wildly inefficeint.
         #this will be called 16 times for the same result...
         #this should at least be quick...
-        rind, θind, ζind, _ = MID.index_to_grid(i, grids)
+        #we are doing 16 times the same calculation...
+        #fkn stupid af.
+        #how we do this needs to be improved drastically.
+        #rind, θind, ζind, h = MID.index_to_grid(i, grids)
+
+        #v poor fix to prevent us redoing the same calculations.
+        #this was defs the problem, this has caused a significant speedup.
+        #if h != 1
+        #    continue
+        #end
 
         if rind == grids.r.N
             continue

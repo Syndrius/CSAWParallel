@@ -21,6 +21,8 @@ export par_compute_spectrum
 export par_spectrum_from_file
 
 
+include("ParMatrixToGrid.jl")
+
 include("ParConstruct.jl")
 
 

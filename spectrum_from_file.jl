@@ -17,11 +17,11 @@ dir = ARGS[1]
 freq = ARGS[2]
 
 if length(ARGS) > 2
-    nev = ARGS[3]
+    nev = parse(Int64, ARGS[3])
 else
     nev = 200
 end
 
 #increased number of evals.
 #should have that as an input tbh!
-par_spectrum_from_file(dir=dir, freq=parse(Float64, freq), nev=nev)
+par_spectrum_from_file(dir=dir, target_freq=parse(Float64, freq), nev=nev)
