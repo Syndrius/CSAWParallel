@@ -193,14 +193,12 @@ Computes the indicies of the non-zero elements for a given row of the matrix. Th
 function compute_nz_inds(ind, grids::MID.FSSGridsT, inds, boundary_inds)
 
 
-    
-
     #size of the largest block in the sparse matrix,
     #essentially the numebr of points for each r grid point.
     block_size = compute_block_size(grids)
 
     #which row of blocks we are currently in.
-    block_row = Int64(div(inds[ind], block_size, RoundDown)) + 1
+    block_row = div(inds[ind], block_size) + 1
 
     #total number of blocks, which is the numebr of radial grids.
     max_block_row = grids.r.N
@@ -280,7 +278,8 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
     
 
     block_size = 4 * grids.θ.N * grids.ζ.count
-    block_row = Int64(div(indslocal[ind], block_size, RoundDown)) + 1
+    #block_row = Int64(div(indslocal[ind], block_size, RoundDown)) + 1
+    block_row = div(indslocal[ind], block_size) + 1
 
     sub_block_size = 4 * grids.ζ.count
 
@@ -288,7 +287,8 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
 
     max_block_row = grids.r.N
 
-    sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
+    #sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
+    sub_block_row = div(rem(indslocal[ind], block_size), sub_block_size) + 1
 
     #display(Int64(mod(sub_block_row, grids.θ.N)))
 
@@ -356,6 +356,8 @@ end
 
 #think this is good now as well.
 #there is a lot of repeated calculation in here, not sure it matters tho!
+#actually allocating fine, test case only has Nζ=2 so it over allocates.
+#fine for normal cases though!
 function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     #each radial block is made up from Nθ rows of θ blocks.
@@ -364,13 +366,13 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
     
     #largest blocks, each block is for a single radial point.   
     block_size = compute_block_size(grids)
-    block_row = Int64(div(indslocal[ind], block_size, RoundDown)) + 1
+
+    block_row = div(indslocal[ind], block_size) + 1
+
 
     #within each block there are smaller subblocks,
     #each corresponding to a single θ point.
     sub_block_size = 8 * grids.ζ.N
-
-    #display(sub_block_size)
 
     #sub_sub_block, which is always size 8.
     #finally within the sub blocks there are 8^2 sub-sub-blocks, each corresponding to a single ζ point.
@@ -379,26 +381,15 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
     max_ss_block_row = grids.ζ.N
 
 
-    #display(max_ss_block_row)
-
-
     max_sub_block_row = grids.θ.N #total sub blocks per row in each block
 
     max_block_row = grids.r.N
 
-    #sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
-    #sub_block_row = mod(mod(indslocal[ind], sub_block_size), grids.θ.N) + 1
 
-    sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
+    sub_block_row = div(rem(indslocal[ind], block_size), sub_block_size) + 1
 
 
-    #could probably be done in a single mod.
-    #ss_block_row = Int64(mod(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.θ.N), grids.ζ.N)) + 1
-    #ss_block_row = Int64(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.ζ.N)) + 1
-
-    #ss_block_row = mod(mod(indslocal[ind], ss_block_size), grids.ζ.N) + 1
-
-    ss_block_row = Int64(mod(div(indslocal[ind], ss_block_size, RoundDown), grids.ζ.N)) + 1
+    ss_block_row = div(rem(rem(indslocal[ind], block_size), sub_block_size), ss_block_size) + 1
 
     """
     How this works:

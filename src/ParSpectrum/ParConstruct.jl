@@ -99,14 +99,15 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #we will start byy allowing the overlap and not including ghost cells.
     #now we loop through the grid
 
-
-    grid_points = matrix_to_grid(indstart, indend, grids)
+    #plus 1 here fixed issues.
+    grid_points = matrix_to_grid(indstart+1, indend, grids)
     #for i in r_start:r_end, j in θ_start:θ_end, k in ζ_start:ζ_end #go to N for periodicity!
 
     #this is the fix. for splitting the grid up.
     #plus 1 for julia indexing
     #minus 1 on indend as it gives inclusive results.
     for (rind, θind, ζind) in grid_points
+    #for i in indstart+1:indend
 
         #this is probably wildly inefficeint.
         #this will be called 16 times for the same result...
@@ -372,6 +373,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #r_start, r_end, θ_start, θ_end, _, _ = get_local_grids(indstart, indend, grids)
 
     #for i in r_start:r_end, j in θ_start:θ_end #go to N for periodicity!
+    #this is hopeless...
     for i in indstart+1:indend
 
         rind, θind, _, _ = MID.index_to_grid(i, grids)

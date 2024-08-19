@@ -10,9 +10,9 @@ using Plots; plotlyjs()
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=50;
+Nr=30;
 Nθ=5;
-Nζ=2;
+Nζ=3;
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
@@ -23,8 +23,8 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
 #looks like full path is needed... a bit annoying tbh.
-dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-#dir_base = "data/example/"
+#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+dir_base = "data/example/"
 
 inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
@@ -49,8 +49,8 @@ tae_ind = find_ind(evals, 0.3267)
 display(evals.ω[tae_ind])
 
 
-
-ϕft = efunc_from_file(dir = dir_base, ind=tae_ind);
+#the tae for this small res is ind=14.
+ϕft = efunc_from_file(dir = dir_base, ind=14);
 #potential plotting is fked af.
 plot_potential(ϕft, grids, 1);
 

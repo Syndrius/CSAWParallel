@@ -1,7 +1,7 @@
 
 #converting the matrix ownership range into the actual grids we want to loop over
 #need to do this for the other cases as well.
-function matrix_to_grid(indstart::Int32, indend::Int32, grids::MID.FFFGridsT)
+function matrix_to_grid(indstart::Int64, indend::Int32, grids::MID.FFFGridsT)
 
     
     #this is going to be v tru=icky, as θstart will be different for rstart
@@ -41,6 +41,62 @@ function matrix_to_grid(indstart::Int32, indend::Int32, grids::MID.FFFGridsT)
 
     for i in 1:θend-1
         for j in 1:grids.ζ.N
+            push!(grid_points, (rend, i, j))
+        end
+    end
+
+    for i in 1:ζend
+        push!(grid_points, (rend, θend, i))
+    end
+    
+    return grid_points
+
+
+end
+
+#TODO
+#this,
+#fix allocate for fff case
+function matrix_to_grid(indstart::Int32, indend::Int32, grids::MID.FFSGridsT)
+
+end
+
+
+function matrix_to_grid(indstart::Int32, indend::Int32, grids::MID.FSSGridsT)
+
+    #this doesn't really make sense for this case!
+
+    #this should be v different.
+    #ideally we will still have the same structure, ie loop
+    #through grid_points.
+
+    rstart, θstart, ζstart, _ = MID.index_to_grid(indstart, grids)
+    rend, θend, ζend, _ = MID.index_to_grid(indend, grids)
+
+
+    grid_points = Tuple{Int, Int, Int}[]
+
+    for i in ζstart:grids.ζ.count
+        push!(grid_points, (rstart, θstart, i))
+    end
+
+    for i in θstart+1:grids.θ.count
+
+        for j in 1:grids.ζ.N
+            push!(grid_points, (rstart, i, j))
+        end
+    end
+
+    for i in rstart+1:rend-1
+        for j in 1:grids.θ.count
+            for k in 1:grids.ζ.count
+                push!(grid_points, (i, j, k))
+            end
+        end
+    end
+
+    for i in 1:θend-1
+        for j in 1:grids.ζ.count
             push!(grid_points, (rend, i, j))
         end
     end
