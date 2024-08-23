@@ -37,7 +37,7 @@ function preallocate_matrix(grids::MID.GridsT)
 
     #probbaly going to ignore the boundaries, will be much to complicated,
     #and for large grids should become negligible.
-    boundary_inds = MID.compute_boundary_inds(grids)
+    boundary_inds = compute_boundary_inds(grids)
 
     #if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         #display(boundary_inds)

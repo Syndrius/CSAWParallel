@@ -3,6 +3,10 @@ module ParSpectrum
 
 #so this works, obvs without registering MID, we have to add this locally, ie Pkg.add ~/phd/MID or whatever
 using MID #must be added locally as we do not have MID on the registary yet.
+using MID.Indexing
+using MID.Basis
+using MID.WeakForm
+using MID.Integration
 using MPI
 using FFTW
 using FastGaussQuadrature
@@ -34,6 +38,8 @@ include("PreAllocate.jl")
 
 include("ParPostProcess.jl")
 
+export process_hdf5 #ideally this would not be needed but some weird shit is happening.
+
 
 
 """
@@ -55,7 +61,10 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
 
 
     MPI.Init()
-    
+    #won't be writing the efuncs like this, as it is cooked.
+    #efuncs_str = " -eps_view_vectors :" * dir * "funcs.dat:ascii_symmodu"
+    evals_str = " -eps_view_values :" * dir * "vals.dat:ascii_matlab"
+    #efuncs_str = " -eps_view_vectors ascii_python:" * dir * "funcs"
     #alternative args
     #eps_harmonics means we are searching inside the spectrum.
     #-st_type sinvert
@@ -63,10 +72,10 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     #-eps_view for solver stuff
     #-memory_view for mem
     #log_view for heaps of petsc info.
-    #slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info", nev, target_freq) #* evals_str * efuncs_str
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info", nev, target_freq) * evals_str #* efuncs_str 
 
     #initialise slepc, setting the number of eigenvalues (nev) the target frequency and declaring that shift and inver should be used.
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -mat_view ::ascii_info", nev, target_freq)
+    #slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -mat_view ::ascii_info", nev, target_freq)
     #this should also init petsc
     SlepcInitialize(slepcargs)
 
@@ -91,7 +100,7 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
 
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
-        mat_dim = matrix_dim(grids)
+        mat_dim = MID.matrix_dim(grids)
         @printf("Construction of %dx%d matrices complete.\n", mat_dim, mat_dim)
     end
 
@@ -109,16 +118,18 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
         @printf("Solving complete, %d eigenvalues found.\n", nconv)
     end
 
-
+    #so this doesn't always work, may still be worth using, as it does seem to work most of the tim...
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Postprocessing...")
     end
-
+    
     #vectors are used to store the eigenfunctions
     vecr, veci = MatCreateVecs(W)
 
+    par_post_process(eps, dir, vecr, veci, nconv)
+
     #process the evals and efuncs into practical formats.
-    par_post_process(eps, dir, grids, prob.geo, vecr, veci, nconv)
+    #old_par_post_process(eps, dir, grids, prob.geo, vecr, veci, nconv)
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Finished.")

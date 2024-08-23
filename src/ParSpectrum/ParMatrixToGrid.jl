@@ -56,8 +56,33 @@ end
 
 #TODO
 #this,
-#fix allocate for fff case
-function matrix_to_grid(indstart::Int32, indend::Int32, grids::MID.FFSGridsT)
+#the first int is 64 because it is modified, perhaps we should modify it in here instead???
+function matrix_to_grid(indstart::Int64, indend::Int32, grids::MID.FFSGridsT)
+
+    #for this case, the grid is only divided by r, θ, all ζ values will always be on the same proc for a given r, θ
+    rstart, θstart, _, _ = index_to_grid(indstart, grids)
+    rend, θend, _, _ = index_to_grid(Int64(indend), grids)
+
+    grid_points = Tuple{Int, Int}[]
+
+    #handles cases where where proc only has a portion of the θgrid for rstart
+    for i in θstart:grids.θ.N
+        push!(grid_points, (rstart, i))
+    end
+
+    #normal casees, which have all of r and all or θ
+    for i in rstart+1:rend-1
+        for j in 1:grids.θ.N
+            push!(grid_points, (i, j))
+        end
+    end
+
+    #handles cases where proc only has portion of θgrid for rend
+    for i in 1:θend
+        push!(grid_points, (rend, i))
+    end
+
+    return grid_points
 
 end
 

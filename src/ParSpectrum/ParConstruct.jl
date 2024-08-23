@@ -13,7 +13,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #island being nothing is stupid, either need to separate cases with and without island, or construct an empty (A=0) island if it is nothing.
 
     
-    rgrid, θgrid, ζgrid = MID.instantiate_grids(grids)
+    rgrid, θgrid, ζgrid = instantiate_grids(grids)
 
 
     #initialise the two structs.
@@ -28,7 +28,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     #S = hermite_basis(ξr, ξθ, ξζ)
     #ideally these would be combined in some way, this is fkn stupid.
-    S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ = MID.hermite_basis(ξr, ξθ, ξζ)
+    S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ = hermite_basis(ξr, ξθ, ξζ)
 
     #the trial function
     #4 is the number of Hermite shape functions
@@ -63,14 +63,14 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #Wdata = Array{ComplexF64}(undef, arr_length)
 
     #FFF might actually be the case where we should use these.
-    #rows = Array{Int64}(undef, 0) #ints
-    #cols = Array{Int64}(undef, 0) #ints
-    #Idata = Array{ComplexF64}(undef, 0)
-    #Wdata = Array{ComplexF64}(undef, 0)
+    rows = Array{Int64}(undef, 0) #ints
+    cols = Array{Int64}(undef, 0) #ints
+    Idata = Array{ComplexF64}(undef, 0)
+    Wdata = Array{ComplexF64}(undef, 0)
 
 
     #either need a condition in case m=0 or just an error message.
-    boundary_inds = MID.compute_boundary_inds(grids)
+    boundary_inds = compute_boundary_inds(grids)
     #display(size(boundary_inds))
     #display(boundary_inds)
 
@@ -130,7 +130,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
         #display((i, j, k))
         #r, θ, ζ, dr, dθ, dζ = MID.local_to_global(i, j, k, ξr, ξθ, ξζ, rgrid, θgrid, ζgrid) #wot is θgrid? will need to be constructed I think.
-        r, θ, ζ, dr, dθ, dζ = MID.local_to_global(rind, θind, ζind, ξr, ξθ, ξζ, rgrid, θgrid, ζgrid) #wot is θgrid? will need to be constructed I think.
+        r, θ, ζ, dr, dθ, dζ = local_to_global(rind, θind, ζind, ξr, ξθ, ξζ, rgrid, θgrid, ζgrid) #wot is θgrid? will need to be constructed I think.
 
         #Hopefully this is correct!
         jac = dr * dθ * dζ / 8 #following thesis!
@@ -139,7 +139,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        MID.WeakForm.W_and_I!(W, I, met, B, prob, r, θ, ζ)
+        W_and_I!(W, I, met, B, prob, r, θ, ζ)
         #W_tor, I_tor = stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
         #stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
 
@@ -154,12 +154,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #may be a better way to do this in the future as v little is actually changing in each loop, especiallly since θ and ζ will have a normal grid.
         #ie perhaps this could just be done for each r or something. Not sure this will be the slowdown tho.
         #TODO -> change the inputs to a single structure, this is cooked 
-        MID.create_local_basis!(Φ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, grids.θ.pf, grids.ζ.pf, dr, dθ, dζ)
+        create_local_basis!(Φ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, grids.θ.pf, grids.ζ.pf, dr, dθ, dζ)
         #create_local_basis!(Φ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, grids.θ.pf, n1, dr, dθ)
 
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        MID.create_local_basis!(Ψ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, -grids.θ.pf, -grids.ζ.pf, dr, dθ, dζ)
+        create_local_basis!(Ψ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, -grids.θ.pf, -grids.ζ.pf, dr, dθ, dζ)
 
 
 
@@ -168,14 +168,14 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
             #display("got to here ok!")
             #may need a θN or something!
-            right_ind = MID.grid_to_index(rind, θind, ζind, trialr, trialθ, trialζ, grids)
+            right_ind = grid_to_index(rind, θind, ζind, trialr, trialθ, trialζ, grids)
 
             for testr in 1:4, testθ in 1:4, testζ in 1:4
                 #display("testsf")
                 #display(testsf)
 
                 
-                left_ind = MID.grid_to_index(rind, θind, ζind, testr, testθ, testζ, grids)
+                left_ind = grid_to_index(rind, θind, ζind, testr, testθ, testζ, grids)
 
                 #only check for boundaries if this is true
                 #no other i's can possibly give boundaries
@@ -248,6 +248,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                     Isum = @views gauss_integrate(Ψ[testr, testθ, testζ, :, :, :, :], Φ[trialr, trialθ, trialζ, :, :, :, :], I, wgr, wgθ, wgζ, jac, grids.r.gp, grids.θ.gp, grids.ζ.gp)
 
+                    
                     set_values!(Wmat, [left_ind], [right_ind], [Wsum])
                     set_values!(Imat, [left_ind], [right_ind], [Isum])
                     #Wsum = 1
@@ -261,6 +262,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     end
 
+    
+
+    #set_values!(Wmat, rows, cols, Wdata) 
+    #set_values!(Imat, rows, cols, Idata) 
 
     #maybe more consisnt for this function to return the rows and data as per parallal case.
     #Wmat = sparse(rows, cols, Wdata)
@@ -289,7 +294,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     
 
-    rgrid, θgrid, Nζ, nlist, ζgrid = MID.instantiate_grids(grids)
+    rgrid, θgrid, Nζ, nlist, ζgrid = instantiate_grids(grids)
 
 
     #initialise the two structs.
@@ -302,7 +307,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #gets the basis 
 
-    S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ = MID.hermite_basis(ξr, ξθ)
+    S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ = hermite_basis(ξr, ξθ)
 
     #the trial function
     #4 is the number of Hermite shape functions
@@ -333,10 +338,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #Idata = Array{ComplexF64}(undef, arr_length)
     #Wdata = Array{ComplexF64}(undef, arr_length)
 
-    #rows = Array{Int64}(undef, 0) #ints
-    #cols = Array{Int64}(undef, 0) #ints
-    #Idata = Array{ComplexF64}(undef, 0)
-    #Wdata = Array{ComplexF64}(undef, 0)
+    rows = Array{Int64}(undef, 0) #ints
+    cols = Array{Int64}(undef, 0) #ints
+    Idata = Array{ComplexF64}(undef, 0)
+    Wdata = Array{ComplexF64}(undef, 0)
 
 
     #either need a condition in case m=0 or just an error message.
@@ -373,10 +378,15 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #r_start, r_end, θ_start, θ_end, _, _ = get_local_grids(indstart, indend, grids)
 
     #for i in r_start:r_end, j in θ_start:θ_end #go to N for periodicity!
-    #this is hopeless...
-    for i in indstart+1:indend
+    grid_points = matrix_to_grid(indstart+1, indend, grids)
+    #for i in r_start:r_end, j in θ_start:θ_end, k in ζ_start:ζ_end #go to N for periodicity!
 
-        rind, θind, _, _ = MID.index_to_grid(i, grids)
+    #this is the fix. for splitting the grid up.
+    #plus 1 for julia indexing
+    #minus 1 on indend as it gives inclusive results.
+    for (rind, θind) in grid_points
+
+        #rind, θind, _, _ = index_to_grid(i, grids)
 
         if rind == grids.r.N
             #maybe break? should be last case?
@@ -384,7 +394,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
 
-        r, θ, dr, dθ = MID.local_to_global(rind, θind, ξr, ξθ, rgrid, θgrid) #wot is θgrid? will need to be constructed I think.
+        r, θ, dr, dθ = local_to_global(rind, θind, ξr, ξθ, rgrid, θgrid) #wot is θgrid? will need to be constructed I think.
 
         #Hopefully this is correct!
         jac = dr * dθ / 4 #following thesis!
@@ -393,7 +403,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        MID.WeakForm.W_and_I!(W, I, met, B, prob, r, θ, ζgrid)
+        W_and_I!(W, I, met, B, prob, r, θ, ζgrid)
         #W_tor, I_tor = stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
         #stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
 
@@ -410,12 +420,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for r, seems pointless.
-            MID.create_local_basis!(Φ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, grids.θ.pf, n1, dr, dθ)
+            create_local_basis!(Φ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, grids.θ.pf, n1, dr, dθ)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                MID.create_local_basis!(Ψ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, -grids.θ.pf, -n2, dr, dθ)
+                create_local_basis!(Ψ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, -grids.θ.pf, -n2, dr, dθ)
 
                 #extract the relevant indicies from the ffted matrices.
                 #mind = mod(k1-k2 + nθ, nθ) + 1
@@ -425,14 +435,14 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                 for trialr in 1:4, trialθ in 1:4
                     
                     #may need a θN or something!
-                    right_ind = MID.grid_to_index(rind, θind, l1, trialr, trialθ, grids)
+                    right_ind = grid_to_index(rind, θind, l1, trialr, trialθ, grids)
 
                     for testr in 1:4, testθ in 1:4
                         #display("testsf")
                         #display(testsf)
 
                         
-                        left_ind = MID.grid_to_index(rind, θind, l2, testr, testθ, grids)
+                        left_ind = grid_to_index(rind, θind, l2, testr, testθ, grids)
 
                         #only check for boundaries if this is true
                         #no other i's can possibly give boundaries
@@ -447,13 +457,13 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 #Wdata[arr_count] = 1.0 + 0.0im
                                 #Idata[arr_count] = 1.0 + 0.0im
 
-                                set_values!(Wmat, [left_ind], [right_ind], [1.0+0.0im]) 
-                                set_values!(Imat, [left_ind], [right_ind], [1.0+0.0im])
+                                #set_values!(Wmat, [left_ind], [right_ind], [1.0+0.0im]) 
+                                #set_values!(Imat, [left_ind], [right_ind], [1.0+0.0im])
 
-                                #push!(rows, left_ind)
-                                #push!(cols, right_ind)
-                                #push!(Wdata, 1.0 + 0.0im)
-                                #push!(Idata, 1.0 + 0.0im)
+                                push!(rows, left_ind)
+                                push!(cols, right_ind)
+                                push!(Wdata, 1.0 + 0.0im)
+                                push!(Idata, 1.0 + 0.0im)
                                 
                                 #arr_count += 1
 
@@ -469,8 +479,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                             else
                                 #rows[arr_count] = left_ind
                                 #cols[arr_count] = right_ind
-                                #push!(rows, left_ind)
-                                #push!(cols, right_ind)
+                                push!(rows, left_ind)
+                                push!(cols, right_ind)
                                 
                                 Wsum = @views gauss_integrate(Ψ[testr, testθ, :, :, :], Φ[trialr, trialθ, :, :, :], W[:, :, :, :, nind], wgr, wgθ, jac, grids.r.gp, grids.θ.gp)
 
@@ -478,17 +488,17 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 Isum = @views gauss_integrate(Ψ[testr, testθ, :, :, :], Φ[trialr, trialθ, :, :, :], I[:, :, :, :, nind], wgr, wgθ, jac, grids.r.gp, grids.θ.gp)
 
 
-                                #push!(Wdata, Wsum)
-                                #push!(Idata, Isum)
-                                set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
-                                set_values!(Imat, [left_ind], [right_ind], [Isum])
+                                push!(Wdata, Wsum)
+                                push!(Idata, Isum)
+                                #set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
+                                #set_values!(Imat, [left_ind], [right_ind], [Isum])
                             end
                         else
                             
                             #rows[arr_count] = left_ind
                             #cols[arr_count] = right_ind
-                            #push!(rows, left_ind)
-                            #push!(cols, right_ind)
+                            push!(rows, left_ind)
+                            push!(cols, right_ind)
                                 
 
 
@@ -497,10 +507,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                             Isum = @views gauss_integrate(Ψ[testr, testθ, :, :, :], Φ[trialr, trialθ, :, :, :], I[:, :, :, :, nind], wgr, wgθ, jac, grids.r.gp, grids.θ.gp)
 
-                            #push!(Wdata, Wsum)
-                            #push!(Idata, Isum)
-                            set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
-                            set_values!(Imat, [left_ind], [right_ind], [Isum])
+                            push!(Wdata, Wsum)
+                            push!(Idata, Isum)
+                            #set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
+                            #set_values!(Imat, [left_ind], [right_ind], [Isum])
                             
                         end
                     end
@@ -511,6 +521,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
     end
 
+    set_values!(Wmat, rows, cols, Wdata) 
+    set_values!(Imat, rows, cols, Idata) 
 
     #maybe more consisnt for this function to return the rows and data as per parallal case.
     #Wmat = sparse(rows, cols, Wdata)
@@ -540,7 +552,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #nθ, mlist, θgrid = MID.spectral_grid(grids.pmd)
     #nζ, nlist, ζgrid = MID.spectral_grid(grids.tmd)
 
-    rgrid, Nθ, mlist, θgrid, Nζ, nlist, ζgrid = MID.instantiate_grids(grids)
+    rgrid, Nθ, mlist, θgrid, Nζ, nlist, ζgrid = instantiate_grids(grids)
 
     #initialise the two structs.
     met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
@@ -549,7 +561,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     ξ, wg = gausslegendre(grids.r.gp) #same as python!
 
     #gets the basis 
-    H, dH, ddH = MID.hermite_basis(ξ)
+    H, dH, ddH = hermite_basis(ξ)
 
     #the trial function
     Φ = zeros(ComplexF64, 4, 9, grids.r.gp)
@@ -561,13 +573,13 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #For parallel we don't predefine the array size, as each proc will have a different interaction 
     #with the boundaries, changing the sizes.
-    #rows = Array{Int64}(undef, 0) #ints
-    #cols = Array{Int64}(undef, 0) #ints
-    #Idata = Array{ComplexF64}(undef, 0)
-    #Wdata = Array{ComplexF64}(undef, 0)
+    rows = Array{Int64}(undef, 0) #ints
+    cols = Array{Int64}(undef, 0) #ints
+    Idata = Array{ComplexF64}(undef, 0)
+    Wdata = Array{ComplexF64}(undef, 0)
 
 
-    boundary_inds = MID.compute_boundary_inds(grids)
+    boundary_inds = compute_boundary_inds(grids)
 
 
     I = zeros(ComplexF64, 9, 9, grids.r.gp, Nθ, Nζ)
@@ -587,20 +599,24 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #this has a plus 1 for indexing, and a minus 1 as ownership range returns end+1.
     r_end = Int64(indend / (grids.θ.count * grids.ζ.count * 2))
 
+    @printf("Core %d has %d to %d\n", MPI.Comm_rank(MPI.COMM_WORLD), r_start, r_end)
+
     if MPI.Comm_rank(MPI.COMM_WORLD) == MPI.Comm_size(MPI.COMM_WORLD)-1
         r_end = r_end-1
     end
+
+    
 
     #now we loop through the grid
     #only relevant chunk of radial grid is considered.
     for i in r_start:r_end
 
-        r, dr = MID.local_to_global(i, ξ, rgrid)
+        r, dr = local_to_global(i, ξ, rgrid)
 
         jac = dr/2 #following thesis!
 
 
-        MID.WeakForm.W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
+        W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
 
 
         #uses the fft plan to take the fft of our two matrices.
@@ -611,12 +627,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #loop over the fourier components of the trial function
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
-            MID.create_local_basis!(Φ, H, dH, ddH, m1, n1, jac)
+            create_local_basis!(Φ, H, dH, ddH, m1, n1, jac)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate
-                MID.create_local_basis!(Ψ, H, dH, ddH, -m2, -n2, jac)
+                create_local_basis!(Ψ, H, dH, ddH, -m2, -n2, jac)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nθ, Nθ) + 1
@@ -625,12 +641,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                 for trialr in 1:4
 
-                    right_ind = MID.grid_to_index(i, k1, l1, trialr, grids)
+                    right_ind = grid_to_index(i, k1, l1, trialr, grids)
 
                     for testr in 1:4
 
                         
-                        left_ind = MID.grid_to_index(i, k2, l2, testr, grids)
+                        left_ind = grid_to_index(i, k2, l2, testr, grids)
 
                         #only check for boundaries if this is true
                         #no other i's can possibly give boundaries
@@ -639,15 +655,15 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                             if left_ind == right_ind && left_ind in boundary_inds
 
-                                #push!(rows, left_ind)
-                                #push!(cols, right_ind)
+                                push!(rows, left_ind)
+                                push!(cols, right_ind)
 
                                 #not ideal way of doing this, will be much slower but will save memeory hopefully!
-                                set_values!(Wmat, [left_ind], [right_ind], [1.0+0.0im]) 
-                                set_values!(Imat, [left_ind], [right_ind], [1.0+0.0im]) 
+                                #set_values!(Wmat, [left_ind], [right_ind], [1.0+0.0im]) 
+                                #set_values!(Imat, [left_ind], [right_ind], [1.0+0.0im]) 
 
-                                #push!(Wdata, 1.0 + 0.0im)
-                                #push!(Idata, 1.0 + 0.0im)
+                                push!(Wdata, 1.0 + 0.0im)
+                                push!(Idata, 1.0 + 0.0im)
                                 
                             
                             #otherwise the boundaries are set to zero, which for sparse matrices
@@ -658,36 +674,36 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 continue
                             #otherwise a regular case for these indicies.
                             else
-                                #push!(rows, left_ind)
-                                #push!(cols, right_ind)
+                                push!(rows, left_ind)
+                                push!(cols, right_ind)
                                 
 
-                                Wsum = @views MID.gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], W[:, :, :, mind, nind], wg, jac, grids.r.gp)
+                                Wsum = @views gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], W[:, :, :, mind, nind], wg, jac, grids.r.gp)
 
 
-                                Isum = @views MID.gauss_integrate(Ψ[:, testr, :], Φ[:, trialr, :], I[:, :, :, mind, nind], wg, jac, grids.r.gp)
+                                Isum = @views gauss_integrate(Ψ[:, testr, :], Φ[:, trialr, :], I[:, :, :, mind, nind], wg, jac, grids.r.gp)
 
-                                set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
-                                set_values!(Imat, [left_ind], [right_ind], [Isum]) 
-                                #push!(Wdata, Wsum)
-                                #push!(Idata, Isum)
+                                #set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
+                                #set_values!(Imat, [left_ind], [right_ind], [Isum]) 
+                                push!(Wdata, Wsum)
+                                push!(Idata, Isum)
                                 
                             end
                         else
                             
-                            #push!(rows, left_ind)
-                            #push!(cols, right_ind)
+                            push!(rows, left_ind)
+                            push!(cols, right_ind)
                                 
 
-                            Wsum = @views MID.gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], W[:, :, :, mind, nind], wg, jac, grids.r.gp)
+                            Wsum = @views gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], W[:, :, :, mind, nind], wg, jac, grids.r.gp)
 
 
-                            Isum = @views MID.gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], I[:, :, :, mind, nind], wg, jac, grids.r.gp)
+                            Isum = @views gauss_integrate(Ψ[testr, :, :], Φ[trialr, :, :], I[:, :, :, mind, nind], wg, jac, grids.r.gp)
 
-                            #push!(Wdata, Wsum)
-                            #push!(Idata, Isum)
-                            set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
-                            set_values!(Imat, [left_ind], [right_ind], [Isum]) 
+                            push!(Wdata, Wsum)
+                            push!(Idata, Isum)
+                            #set_values!(Wmat, [left_ind], [right_ind], [Wsum]) 
+                            #set_values!(Imat, [left_ind], [right_ind], [Isum]) 
                             
                         end
                     end
@@ -695,6 +711,9 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
             end
         end
     end
+
+    set_values!(Wmat, rows, cols, Wdata) 
+    set_values!(Imat, rows, cols, Idata) 
 
 
     #return rows, cols, Wdata, Idata

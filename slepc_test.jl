@@ -1,6 +1,6 @@
 
 # Import package
-using MPI
+#using MPI
 using PetscWrap
 
 function get_local_rows(global_n, rank, nprocs)
@@ -109,6 +109,13 @@ KSPSolve(ksp, b, x)
 
 # Print the solution
 #VecView(x)
+
+#lets try and write this shit to file properly
+
+#viewer = HDF5Open(MPI.COMM_WORLD, "test.hdf5", PETSC_MODE_WRITE)
+viewer = ASCIIOpen(MPI.COMM_WORLD, "test.txt")#, PETSC_MODE_WRITE)
+
+vecView(x, viewer)
 
 # Access the solution (this part is under development), getting a Julia array; and then restore it
 array, ref = VecGetArray(x) # do something with array

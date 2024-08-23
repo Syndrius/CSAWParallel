@@ -9,7 +9,6 @@ Probably want to change this to a different q-profile eventually.
 
 using MID 
 using MIDParallel
-
 using Plots; plotlyjs()
 
 
@@ -20,14 +19,14 @@ Nr=100;
 geo = GeoParamsT(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
 rgrid = init_fem_grid(N=Nr)
-θgrid = init_sm_grid(start=1, count = 2)
+θgrid = init_sm_grid(start=0, count = 6)
 ζgrid = init_sm_grid(start=-1, count = 1)
 grids = init_grids(rgrid, θgrid, ζgrid);
 
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "data/example/"
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+#dir_base = "data/example/"
 
 inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
@@ -35,20 +34,26 @@ inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 Now execute the command in parallel from terminal/bash script.
 eg run from MIDParallel/
 >>mpiexecjl -n 2 julia -e 'using MIDParallel; using MID; par_spectrum_from_file(dir="data/example/", target_freq=0.29)'
+>>mpiexec -n 2 julia -e 'using MIDParallel; using MID; par_spectrum_from_file(dir="/home/149/mt3516/island_damping/MIDParallel/data/example/", target_freq=0.29)'
 
 See convergence.sh for other examples of running in parallel.
 
 """
 
+
+process_hdf5(dir_base) #unfort have we have to do this!
 #now we can read the data in. first the eigenvalues,
 evals = evals_from_file(dir=dir_base);
 
+
 plot_continuum(evals);
 
-display(evals.ω[1]);
 
-ϕ1 = efunc_from_file(dir=dir_base, ind=1);
-plot_potential(ϕ1, grids);
+ϕft = efunc_from_file(dir=dir_base, ind=1);
+plot_potential(ϕft, grids);
+ϕ = efunc_from_file(dir=dir_base, ind=1, ft=false);
+plot_potential(ϕ, grids);
 
-
-
+#inconsistent with phase of two modes, here we have the og case for some reason...
+contour_plot(ϕ, grids, ind=1)
+surface_plot(ϕ, grids, ind=1)
