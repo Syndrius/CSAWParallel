@@ -7,6 +7,7 @@ using MID.Indexing
 using MID.Basis
 using MID.WeakForm
 using MID.Integration
+using MID.Structures
 using MPI
 using FFTW
 using FastGaussQuadrature

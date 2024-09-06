@@ -13,8 +13,10 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - Fix VecGetArray -> This did not seem to work, may have to just pretend this issue doesn't exist.
  - Probably shouldn't add elements one by one anymore... -> seems to be quicker with v limited testing??
  - Write the evals as a jld2 thing as well. Stupid to have to parse a .dat file now.
- - May actually want to split this into multiple modules now.
+ - May actually want to split this into multiple modules now. Perhaps a petsc module with MatrixToGrid and PreAllocate
+ - Should remove par names. quite pointless. -> will still need to separate compute_spectrum though!
  - Mode labelling seems to be cooked again...
+ - Post process is very inconsistent with MID. -> ideally post process would be moved to within MID entirely. V awkward to have 2 close to identical copies of the same thing. -> especially since there is an incredible amount of repeated computation done...
 
 """
 

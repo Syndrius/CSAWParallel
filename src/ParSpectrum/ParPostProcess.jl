@@ -106,7 +106,11 @@ function process_hdf5(dir::String)
         #not sure why this was so much faster before?
         #perhaps we had a better node?
         #we can probably optimise this a bit by preallocating data and creating fourier transform plans etc.
-        efunc = load_object(dir*"/efuncs_raw/"*efunc_read)[1, :]
+        #perhaps 2 is the ind we want?
+        #why the fk is there two????? golly gosh this is fkn stoopid.
+        efunc_split = load_object(dir*"/efuncs_raw/"*efunc_read)#[1, :]
+
+        efunc = efunc_split[1, :] .+ efunc_split[2, :] * 1im
         #fid = h5open(dir*"/efuncs_raw/"*efunc_read, "r")
         #key = (keys(fid))[1]
         #efunc = read(fid[key])[1, :]
@@ -131,6 +135,227 @@ function process_hdf5(dir::String)
     save_object(dir*"/evals.jld2", evals)
 
 end
+
+
+
+
+
+function process_efunc(efunc, grids::MID.FSSGridsT)
+
+
+    
+    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.count, grids.ζ.count)
+
+    θgrid_size = compute_ifft_grid(grids.θ)
+    ζgrid_size = compute_ifft_grid(grids.ζ)
+
+    phi = zeros(ComplexF64, grids.r.N, θgrid_size, ζgrid_size)
+
+
+    #doing this for every single efunc is probbaly stupid af.
+    rgrid, _, mlist, _, _, nlist, _= instantiate_grids(grids)
+
+    #maxphi = -100
+    #we will probably want a plan for fourier transform.
+
+
+    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
+    #but this can do for now.
+    #eg have a look at cka's way of doing it.
+    for i in 1:2:matrix_dim(grids)
+
+        #note these are the indicies.
+        r, θ, ζ, hs = MID.index_to_grid(i, grids)
+
+        #shouldn't need this if we skip over each 8.
+        if hs == 1
+            #this is actually already the ft version.
+            phi_ft[r, θ, ζ] = efunc[i] #.* exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
+        end
+    end
+
+    θgrid = LinRange(0, 2π, θgrid_size+1)[1:end-1]
+    ζgrid = LinRange(0, 2π, ζgrid_size+1)[1:end-1]
+
+    #ift but for only the modes specified.
+    for j in 1:grids.r.N
+        #for k in 1:grids.ζ.count
+        for k in 1:1:length(nlist)
+            for l in 1:1:length(mlist)
+
+                phi[j, :, :] += phi_ft[j, l, k] .* exp.(1im * mlist[l] .* θgrid .+ 1im * nlist[k] .* ζgrid' )
+            end
+        end
+    end
+
+
+    #for i in 1:grids.r.N
+        #ifft to restore original ϕ
+    #    phi[i, :, :] = ifft(phi_ft[i, :, :], [1, 2])
+    #end 
+    #phi[:, :, :] = ifft(phi_ft[:, :, :], [2, 3])
+
+    rm = zeros(Int64, grids.θ.count, grids.ζ.count)
+    ϕm = zeros(Float64, grids.θ.count, grids.ζ.count)
+
+    for j in 1:grids.θ.count, k in 1:grids.ζ.count
+
+        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
+        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
+    end
+
+    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
+
+    mlab = mlist[max_mode[1]]
+    nlab = nlist[max_mode[2]]
+    
+
+
+    #cka does it better than us tbh.
+    #max_mode is the index of the maximum mode, essentially useless atm.
+    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
+
+end
+
+
+function process_efunc(efunc, grids::MID.FFSGridsT)
+
+    #phi_ffs = MID.reconstruct_phi(efunc, grids)
+
+    phi_ffs = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.count)
+    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.count)
+
+    ζgrid_size = compute_ifft_grid(grids.ζ)
+    phi = zeros(ComplexF64, grids.r.N, grids.θ.N, ζgrid_size)
+
+
+    rgrid, θgrid, _, nlist, _= instantiate_grids(grids)
+
+    #maxphi = -100
+    #we will probably want a plan for fourier transform.
+
+    m = grids.θ.pf
+
+    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
+    #but this can do for now.
+    #eg have a look at cka's way of doing it.
+    for i in 1:4:matrix_dim(grids)
+
+        #note these are the indicies.
+        r, θ, ζ, hs = index_to_grid(i, grids)
+        phi_ffs[r, θ, ζ] = efunc[i] * exp(1im * m * θgrid[θ])
+
+        #shouldn't need this if we skip over each 8.
+        #if hs == 1
+            #may be the wrong way around!
+            #this doesn't seem to have worked as expected tbh!
+             #.* exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
+        #end
+    end
+
+
+
+
+    phi_ft = fft(phi_ffs, [2])
+    
+    ζgrid = LinRange(0, 2π, ζgrid_size+1)[1:end-1]
+    
+
+    for j in 1:grids.r.N
+            
+        for k in 1:grids.θ.N
+            for l in 1:1:length(nlist)
+
+                phi[j, k, :] += phi_ffs[j, k, l] .* exp.(1im * nlist[l] .* ζgrid)
+            end
+        end
+    end
+    
+
+    rm = zeros(Int64, grids.θ.N, grids.ζ.count)
+    ϕm = zeros(Float64, grids.θ.N, grids.ζ.count)
+
+    for j in 1:grids.θ.N, k in 1:grids.ζ.count
+
+        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
+        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
+    end
+
+    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
+    mlab = MID.mode_label(max_mode[1], grids.θ)
+    nlab = nlist[max_mode[2]]
+
+    #cka does it better than us tbh.
+    #max_mode is the index of the maximum mode, essentially useless atm.
+    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
+
+end
+
+
+
+#this should probably be in MID.
+#this is probably sub optimal to do this one eval at a time, but we dont often consider many so should be ok.
+#this is an awful, suboptimal function, will need to be improved.
+#same as reconstruct phi in MID, but only does a single efunc at a time.
+#can probably combine and put into MID. Will never be used by MID though
+function process_efunc(efunc, grids::MID.FFFGridsT)
+
+    phi = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.N)
+    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.N)
+
+
+    rgrid, θgrid, ζgrid = MID.instantiate_grids(grids)
+
+    #maxphi = -100
+    #we will probably want a plan for fourier transform.
+
+    m = grids.θ.pf
+    n = grids.ζ.pf
+
+    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
+    #but this can do for now.
+    #eg have a look at cka's way of doing it.
+    for i in 1:8:matrix_dim(grids)
+
+        #note these are the indicies.
+        r, θ, ζ, hs = MID.index_to_grid(i, grids)
+
+        #shouldn't need this if we skip over each 8.
+        if hs == 1
+            #may be the wrong way around!
+            #this doesn't seem to have worked as expected tbh!
+            phi[r, θ, ζ] = efunc[i] * exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
+        end
+    end
+
+
+    phi_ft = fft(phi, [2, 3])
+
+
+    rm = zeros(Int64, grids.θ.N, grids.ζ.N)
+    ϕm = zeros(Float64, grids.θ.N, grids.ζ.N)
+
+    for j in 1:grids.θ.N, k in 1:grids.ζ.N
+
+        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
+        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
+    end
+
+    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
+
+
+    mlab = MID.mode_label(max_mode[1], grids.θ)
+    nlab = MID.mode_label(max_mode[2], grids.ζ)
+
+
+    #cka does it better than us tbh.
+    #max_mode is the index of the maximum mode, essentially useless atm.
+    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
+
+end
+#
+
+
 
 
 
@@ -301,183 +526,3 @@ function convert_to_jl(vec::PetscVec)
     @assert iszero(error)
     return v
 end
-
-
-
-function process_efunc(efunc, grids::MID.FSSGridsT)
-
-    #this will just be zeros, need a better solution...
-    #probably want to un-fourier transform this.
-    phi = zeros(ComplexF64, grids.r.N, grids.θ.count, grids.ζ.count)
-    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.count, grids.ζ.count)
-
-
-    #doing this for every single efunc is probbaly stupid af.
-    rgrid, _, mlist, _, _, nlist, _= instantiate_grids(grids)
-
-    #maxphi = -100
-    #we will probably want a plan for fourier transform.
-
-
-    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
-    #but this can do for now.
-    #eg have a look at cka's way of doing it.
-    for i in 1:2:matrix_dim(grids)
-
-        #note these are the indicies.
-        r, θ, ζ, hs = MID.index_to_grid(i, grids)
-
-        #shouldn't need this if we skip over each 8.
-        if hs == 1
-            #this is actually already the ft version.
-            phi_ft[r, θ, ζ] = efunc[i] #.* exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
-        end
-    end
-
-
-    #for i in 1:grids.r.N
-        #ifft to restore original ϕ
-    #    phi[i, :, :] = ifft(phi_ft[i, :, :], [1, 2])
-    #end 
-    phi[:, :, :] = ifft(phi_ft[:, :, :], [2, 3])
-
-    rm = zeros(Int64, grids.θ.count, grids.ζ.count)
-    ϕm = zeros(Float64, grids.θ.count, grids.ζ.count)
-
-    for j in 1:grids.θ.count, k in 1:grids.ζ.count
-
-        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
-        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
-    end
-
-    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
-
-    mlab = mlist[max_mode[1]]
-    nlab = nlist[max_mode[2]]
-    
-
-
-    #cka does it better than us tbh.
-    #max_mode is the index of the maximum mode, essentially useless atm.
-    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
-
-end
-
-
-function process_efunc(efunc, grids::MID.FFSGridsT)
-
-    phi_recon = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.count)
-    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.count)
-    phi = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.count)
-
-
-    rgrid, _, _, nlist, _= instantiate_grids(grids)
-
-    #maxphi = -100
-    #we will probably want a plan for fourier transform.
-
-
-    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
-    #but this can do for now.
-    #eg have a look at cka's way of doing it.
-    for i in 1:4:matrix_dim(grids)
-
-        #note these are the indicies.
-        r, θ, ζ, hs = index_to_grid(i, grids)
-
-        #shouldn't need this if we skip over each 8.
-        if hs == 1
-            #may be the wrong way around!
-            #this doesn't seem to have worked as expected tbh!
-            phi_recon[r, θ, ζ] = efunc[i] #.* exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
-        end
-    end
-
-
-
-
-    phi_ft[:, :, :] = fft(phi_recon[:, :, :], [2])
-    phi[:, :, :] = ifft(phi_recon[:, :, :], [3])
-
-    rm = zeros(Int64, grids.θ.N, grids.ζ.count)
-    ϕm = zeros(Float64, grids.θ.N, grids.ζ.count)
-
-    for j in 1:grids.θ.N, k in 1:grids.ζ.count
-
-        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
-        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
-    end
-
-    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
-    mlab = MID.mode_label(max_mode[1], grids.θ)
-    nlab = nlist[max_mode[2]]
-
-    #cka does it better than us tbh.
-    #max_mode is the index of the maximum mode, essentially useless atm.
-    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
-
-end
-
-
-
-#this should probably be in MID.
-#this is probably sub optimal to do this one eval at a time, but we dont often consider many so should be ok.
-#this is an awful, suboptimal function, will need to be improved.
-#same as reconstruct phi in MID, but only does a single efunc at a time.
-#can probably combine and put into MID. Will never be used by MID though
-function process_efunc(efunc, grids::MID.FFFGridsT)
-
-    phi = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.N)
-    phi_ft = zeros(ComplexF64, grids.r.N, grids.θ.N, grids.ζ.N)
-
-
-    rgrid, _, _ = MID.instantiate_grids(grids)
-
-    #maxphi = -100
-    #we will probably want a plan for fourier transform.
-
-
-    #think this can be done more efficeintly by knowing the pattern we should be able to set multiple values at once.
-    #but this can do for now.
-    #eg have a look at cka's way of doing it.
-    for i in 1:8:matrix_dim(grids)
-
-        #note these are the indicies.
-        r, θ, ζ, hs = MID.index_to_grid(i, grids)
-
-        #shouldn't need this if we skip over each 8.
-        if hs == 1
-            #may be the wrong way around!
-            #this doesn't seem to have worked as expected tbh!
-            phi[r, θ, ζ] = efunc[i] #.* exp(1im * (m * θgrid[θ] + n * ζgrid[ζ]))
-        end
-    end
-
-
-    for i in 1:grids.r.N
-        #ft in θ and ζ, may want a plan later.
-        phi_ft[i, :, :] = fft(phi[i, :, :], [1, 2])
-    end 
-
-    rm = zeros(Int64, grids.θ.N, grids.ζ.N)
-    ϕm = zeros(Float64, grids.θ.N, grids.ζ.N)
-
-    for j in 1:grids.θ.N, k in 1:grids.ζ.N
-
-        rm[j, k] = argmax(abs.(real.(phi_ft[:, j, k])))
-        ϕm[j, k] = abs.(real.(phi_ft[rm[j, k], j, k]))
-    end
-
-    max_mode = argmax(ϕm) #still need to convert this to the correct label... 
-
-
-    mlab = MID.mode_label(max_mode[1], grids.θ)
-    nlab = MID.mode_label(max_mode[2], grids.ζ)
-
-
-    #cka does it better than us tbh.
-    #max_mode is the index of the maximum mode, essentially useless atm.
-    return phi, phi_ft, rgrid[rm[max_mode]], (mlab, nlab)
-
-end
-#

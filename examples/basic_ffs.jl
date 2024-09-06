@@ -3,18 +3,19 @@
 
 using MID 
 using MIDParallel
+using Plots; plotlyjs()
 
 
 #first we define the problem and write to file.
 #this is identical to MID.
-Nr=100;
-Nθ=10;
+Nr=40;
+Nθ=6;
 #rgrid = collect(LinRange(0, 1, N));
-geo = GeoParamsT(R0=4.0);
-prob = init_problem(q=fu_dam_q, geo=geo); 
+geo = GeoParamsT(R0=10.0);
+prob = init_problem(q=Axel_q, geo=geo); 
 rgrid = init_fem_grid(N=Nr);
-θgrid = init_fem_grid(N=Nθ)#, pf=1);
-ζgrid = init_sm_grid(start=-1, count = 1);
+θgrid = init_fem_grid(N=Nθ, pf=2);
+ζgrid = init_sm_grid(start=-2, count = 1);
 grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
@@ -41,14 +42,15 @@ evals = evals_from_file(dir=dir_base);
 
 plot_continuum(evals);
 
+tae_ind = find_ind(evals, 0.7039555)
+
 
 #mode labels are cooked af again... why. continuum seems to be fine.
 #not plot_potential though..
 #perhaps it is both??? V unsure though.
-ϕft = efunc_from_file(dir=dir_base, ind=1);
+ϕft = efunc_from_file(dir=dir_base, ind=tae_ind);
 plot_potential(ϕft, grids);
-ϕ = efunc_from_file(dir=dir_base, ind=1, ft=false);
-plot_potential(ϕ, grids);
+ϕ = efunc_from_file(dir=dir_base, ind=tae_ind, ft=false);
 
 #so this seems to have a heap of θ lines of z=0... v worrying...
 contour_plot(ϕ, grids, ind=1)
