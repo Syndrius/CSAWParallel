@@ -40,6 +40,7 @@ include("PreAllocate.jl")
 include("ParPostProcess.jl")
 
 export process_hdf5 #ideally this would not be needed but some weird shit is happening.
+export process_hdf5_deriv
 
 
 

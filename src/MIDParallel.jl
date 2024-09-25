@@ -17,6 +17,9 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - Should remove par names. quite pointless. -> will still need to separate compute_spectrum though!
  - Mode labelling seems to be cooked again...
  - Post process is very inconsistent with MID. -> ideally post process would be moved to within MID entirely. V awkward to have 2 close to identical copies of the same thing. -> especially since there is an incredible amount of repeated computation done...
+ - Post processing should be changable now, can make use of MID. Main modification will be doing so from file.
+ - Maybe introduce another module that is just a bunch of MID function but done via file. As that is often  the main difference.
+ - Post-processing is just awful, should be able to make it more consistent now!
 
 """
 
@@ -28,6 +31,7 @@ include("ParSpectrum/ParSpectrum.jl")
 using MIDParallel.ParSpectrum; export par_compute_spectrum
 using MIDParallel.ParSpectrum; export par_spectrum_from_file
 using MIDParallel.ParSpectrum; export process_hdf5
+using MIDParallel.ParSpectrum; export process_hdf5_deriv
 
 
 

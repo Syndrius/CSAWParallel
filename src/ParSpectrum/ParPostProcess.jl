@@ -43,6 +43,101 @@ function par_post_process(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
 
 end
 
+#same function but the option of a deriv.
+#probably will replace the old version soon.
+function process_hdf5_deriv(dir::String, deriv=false)
+
+    #if isfile(dir*"/evals.jld2")
+        #this will not be good enough when we also want to find a derivative!
+        #display("Processing already complete.")
+        #return
+    #end
+
+    #these almost certianly already exist, but in case they don't
+    if deriv
+        mkpath(dir*"/efuncs_deriv")
+        mkpath(dir*"/efuncs_ft_deriv")
+    else
+        mkpath(dir*"/efuncs")
+        mkpath(dir*"/efuncs_ft")
+    end
+        
+    #mkpath(dir*"/efuncs_raw")
+
+    #this will work for the newest cases but not the old ones.
+    #probably need a try catch??
+    prob, grids = inputs_from_file(dir=dir)
+
+
+    #maybe better to do this via hdf5 or something.
+    vals = open(dir*"vals.dat", "r") do file
+        s = readlines(file)[2:end-1] 
+        parse.(ComplexF64, s)
+    end
+
+
+    nconv = length(vals)
+
+    #ie eval, rmax, label??
+    #label isn't a float though...
+    #cont_reconstruction = zeros(Float64, nconv, nconv, nconv)
+    rmode = zeros(Float64, nconv)
+    #mlab = zeros(Int64, nconv)
+    #nlab = zeros(Int64, nconv)
+    ω = zeros(ComplexF64, nconv)
+    modelabs = Tuple{Int, Int}[] 
+
+    for i in 1:nconv
+
+        #this is fkn slow af.
+        #need to stick with jld2 I think.
+        efunc_read = @sprintf("efunc%04d.hdf5", i)
+        efunc_write = @sprintf("efunc%04d.jld2", i)
+
+        #unfort doesn't handle complex numbers v well
+        efunc_split = load_object(dir*"/efuncs_raw/"*efunc_read)#[1, :]
+
+        efunc = efunc_split[1, :] .+ efunc_split[2, :] * 1im
+
+        if deriv 
+            ϕ_recon = MID.reconstruct_phi_deriv(efunc, grids)
+        else
+            ϕ_recon = MID.reconstruct_phi(efunc, grids)
+        end
+        
+        ϕ, ϕft = MID.Spectrum.ft_phi(ϕ_recon, grids)
+
+        if deriv
+            rm, modelab = MID.Spectrum.label_mode(ϕft[:, :, :, 1], grids)
+        else
+            rm, modelab = MID.Spectrum.label_mode(ϕft, grids)
+        end
+
+        
+        #phi, phi_ft, rm, modelab = process_efunc(efunc, grids)
+
+        push!(modelabs, modelab)
+
+        rmode[i] = rm
+
+        #normalise the eigenvalues
+        ω[i] = prob.geo.R0 * sqrt(vals[i])
+        if deriv
+            save_object(dir * "/efuncs_deriv/"*efunc_write, ϕ)
+            save_object(dir * "/efuncs_ft_deriv/"*efunc_write, ϕft)
+        else
+            save_object(dir * "/efuncs/"*efunc_write, ϕ)
+            save_object(dir * "/efuncs_ft/"*efunc_write, ϕft)
+        end
+        
+    end
+    evals = MID.EvalsT(ω, rmode, modelabs)
+
+    save_object(dir*"/evals.jld2", evals)
+
+end
+
+
 
 #used to process the direct output of slepc for when the weird stuff happens.
 #this should be called in serial!
