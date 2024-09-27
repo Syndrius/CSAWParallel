@@ -6,7 +6,7 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
 
 
  - Add Ghost cells -> maybe not worth, from petsc:  Note: It is fine to generate some entries on the “wrong” process. Often this can lead to cleaner, simpler, less buggy codes. One should never make code overly complicated in order to generate all values locally. Rather, one should organize the code in such a way that most values are generated locally.
- - Currenly there is no possibility of construct or solve... have to do both with petsc.
+ - Currenly there is no possibility of construct or solve... have to do both with petsc. -> this may actually be a bit important for efficiency, ideally we can save the matrices then solve different parts of the spectrum...
  - May want to preallocate the array that stores the nz_inds
  - May want to try postprocess more efficiently if it takes a long time. Hopefully it is ok though.
  - ParConstruct and PreAllocate could be cleaned up a bit.
