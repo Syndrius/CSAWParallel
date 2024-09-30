@@ -13,7 +13,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #island being nothing is stupid, either need to separate cases with and without island, or construct an empty (A=0) island if it is nothing.
 
     
-    rgrid, θgrid, ζgrid = instantiate_grids(grids)
+    rgrid, θgrid, ζgrid = inst_grids(grids)
 
 
     #initialise the two structs.
@@ -294,8 +294,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     
 
-    rgrid, θgrid, Nζ, nlist, ζgrid = instantiate_grids(grids)
+    rgrid, θgrid, ζgrid = inst_grids(grids)
 
+    Nζ = length(ζgrid)
+    nlist = mode_list(grids.ζ)
 
     #initialise the two structs.
     met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
@@ -345,7 +347,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
 
     #either need a condition in case m=0 or just an error message.
-    boundary_inds = MID.compute_boundary_inds(grids)
+    boundary_inds = compute_boundary_inds(grids)
     #display(size(boundary_inds))
     #display(boundary_inds)
 
@@ -552,7 +554,13 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #nθ, mlist, θgrid = MID.spectral_grid(grids.pmd)
     #nζ, nlist, ζgrid = MID.spectral_grid(grids.tmd)
 
-    rgrid, Nθ, mlist, θgrid, Nζ, nlist, ζgrid = instantiate_grids(grids)
+    rgrid, θgrid, ζgrid = inst_grids(grids)
+
+    Nθ = length(θgrid)
+    Nζ = length(ζgrid)
+
+    mlist = mode_list(grids.θ)
+    nlist = mode_list(grids.ζ)
 
     #initialise the two structs.
     met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
@@ -594,10 +602,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
 
     indstart, indend = MatGetOwnershipRange(Wmat)
+
+    #TODO Move this!
     #plus one to shift to julia indexing
-    r_start = Int64(indstart / (grids.θ.count * grids.ζ.count * 2)) + 1
+    r_start = Int64(indstart / (grids.θ.N * grids.ζ.N * 2)) + 1
     #this has a plus 1 for indexing, and a minus 1 as ownership range returns end+1.
-    r_end = Int64(indend / (grids.θ.count * grids.ζ.count * 2))
+    r_end = Int64(indend / (grids.θ.N * grids.ζ.N * 2))
 
     @printf("Core %d has %d to %d\n", MPI.Comm_rank(MPI.COMM_WORLD), r_start, r_end)
 

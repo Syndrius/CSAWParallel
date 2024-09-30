@@ -16,15 +16,15 @@ Nζ=1;
 #rgrid = collect(LinRange(0, 1, N));
 geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
-rgrid = init_fem_grid(N=Nr)
-θgrid = init_fem_grid(N=Nθ, pf=2);
-ζgrid = init_fem_grid(N=Nζ, pf=-2);
+rgrid = rfem_grid(N=Nr)
+θgrid = afem_grid(N=Nθ, pf=2);
+ζgrid = afem_grid(N=Nζ, pf=-2);
 grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
 #looks like full path is needed... a bit annoying tbh.
-dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-#dir_base = "data/example/"
+#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+dir_base = "data/example/"
 
 #dir_base = "/scratch/y08/mt3516/fff/fu_dam/300x20x8/"
 

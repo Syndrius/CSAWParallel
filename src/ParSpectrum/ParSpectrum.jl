@@ -102,8 +102,8 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
 
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
-        mat_dim = MID.matrix_dim(grids)
-        @printf("Construction of %dx%d matrices complete.\n", mat_dim, mat_dim)
+        mat_size = matrix_size(grids)
+        @printf("Construction of %dx%d matrices complete.\n", mat_size, mat_size)
     end
 
 

@@ -11,7 +11,7 @@ function preallocate_matrix(grids::MID.GridsT)
     W = MatCreate()
     I = MatCreate()
 
-    global_n = matrix_dim(grids) 
+    global_n = matrix_size(grids) 
 
     #this step is probably not needed, but just certifies that we know exactly which part each proc is
     #handling.
@@ -146,7 +146,7 @@ function split_matrix(grids::MID.FFSGridsT)
     
 
     #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * 4 * grids.ζ.count
+    local_n = counts[rank+1] * 4 * grids.ζ.N
 
     return local_n
     #compute_block_size(grids)
@@ -179,7 +179,7 @@ function split_matrix(grids::MID.FSSGridsT)
     
 
     #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * 2 * grids.θ.count * grids.ζ.count
+    local_n = counts[rank+1] * 2 * grids.θ.N * grids.ζ.N
 
     return local_n
     #compute_block_size(grids)
@@ -257,12 +257,12 @@ end
 
 function compute_block_size(grids::MID.FFSGridsT)
 
-    return 4 * grids.θ.N * grids.ζ.count
+    return 4 * grids.θ.N * grids.ζ.N
 end
 
 function compute_block_size(grids::MID.FSSGridsT)
 
-    return 2 * grids.θ.count * grids.ζ.count
+    return 2 * grids.θ.N * grids.ζ.N
 end
 
 function compute_block_size(grids::MID.FFFGridsT)
@@ -277,11 +277,11 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
 
     
 
-    block_size = 4 * grids.θ.N * grids.ζ.count
+    block_size = 4 * grids.θ.N * grids.ζ.N
     #block_row = Int64(div(indslocal[ind], block_size, RoundDown)) + 1
     block_row = div(indslocal[ind], block_size) + 1
 
-    sub_block_size = 4 * grids.ζ.count
+    sub_block_size = 4 * grids.ζ.N
 
     max_sub_block_row = grids.θ.N #total sub blocks per row in each block
 
