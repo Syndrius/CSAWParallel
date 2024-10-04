@@ -20,8 +20,8 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "data/example/"
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+#dir_base = "data/example/"
 
 inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
@@ -40,16 +40,16 @@ process_hdf5(dir_base) #unfort have we have to do this!
 evals = evals_from_file(dir=dir_base);
 
 
-plot_continuum(evals);
+continuum_plot(evals);
 
-tae_ind = find_ind(evals, 0.7039555)
+tae_ind = find_ind(evals, 0.384)
 
 
 #mode labels are cooked af again... why. continuum seems to be fine.
 #not plot_potential though..
 #perhaps it is both??? V unsure though.
 ϕft = efunc_from_file(dir=dir_base, ind=tae_ind);
-plot_potential(ϕft, grids);
+potential_plot(ϕft, grids);
 ϕ = efunc_from_file(dir=dir_base, ind=tae_ind, ft=false);
 
 #so this seems to have a heap of θ lines of z=0... v worrying...

@@ -14,12 +14,14 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - Probably shouldn't add elements one by one anymore... -> seems to be quicker with v limited testing??
  - Write the evals as a jld2 thing as well. Stupid to have to parse a .dat file now.
  - May actually want to split this into multiple modules now. Perhaps a petsc module with MatrixToGrid and PreAllocate
+ = Aka, entire thing needs to be cleaned.
  - Should remove par names. quite pointless. -> will still need to separate compute_spectrum though!
  - Mode labelling seems to be cooked again...
  - Post process is very inconsistent with MID. -> ideally post process would be moved to within MID entirely. V awkward to have 2 close to identical copies of the same thing. -> especially since there is an incredible amount of repeated computation done...
  - Post processing should be changable now, can make use of MID. Main modification will be doing so from file.
  - Maybe introduce another module that is just a bunch of MID function but done via file. As that is often  the main difference.
  - Post-processing is just awful, should be able to make it more consistent now!
+ - May need to note that this requires HDF5 or whatever now. No longer works on laptop.
 
 """
 

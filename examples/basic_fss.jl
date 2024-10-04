@@ -25,8 +25,8 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "data/example/"
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+#dir_base = "data/example/"
 
 inputs_to_file(prob=prob, grids=grids, dir=dir_base);
 
@@ -46,11 +46,11 @@ process_hdf5(dir_base) #unfort have we have to do this!
 evals = evals_from_file(dir=dir_base);
 
 
-plot_continuum(evals);
+continuum_plot(evals);
 
 
 ϕft = efunc_from_file(dir=dir_base, ind=1);
-plot_potential(ϕft, grids);
+potential_plot(ϕft, grids);
 ϕ = efunc_from_file(dir=dir_base, ind=1, ft=false);
 #plot_potential(ϕ, grids);
 

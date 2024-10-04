@@ -23,8 +23,8 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "data/example/"
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
+#dir_base = "data/example/"
 
 #dir_base = "/scratch/y08/mt3516/fff/fu_dam/300x20x8/"
 
@@ -49,24 +49,24 @@ process_hdf5(dir_base)
 evals = evals_from_file(dir=dir_base);
 
 #wot is this, this is cooked af
-plot_continuum(evals);
+continuum_plot(evals);
 
 #found the tae, freq is significantly different for this low res example.
 tae_ind = find_ind(evals, 0.3835)
 
 display(length(evals.ω))
 
-tae_ind = find_ind(evals, 0.764298)
+tae_ind = find_ind(evals, 0.384)
 
 
 #the tae for this small res is ind=14.
 ϕft = efunc_from_file(dir = dir_base, ind=tae_ind);
 #potential plotting is fked af.
-plot_potential(ϕft, grids);
+potential_plot(ϕft, grids);
 
 ϕ = efunc_from_file(dir = dir_base, ind=tae_ind, ft=false);
 #potential plotting is fked af.
-plot_potential(ϕ, grids);
+potential_plot(ϕ, grids);
 
 #looks good, other than mode labels.
 contour_plot(ϕ, grids)

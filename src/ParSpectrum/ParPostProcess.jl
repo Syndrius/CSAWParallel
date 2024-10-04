@@ -45,7 +45,7 @@ end
 
 #same function but the option of a deriv.
 #probably will replace the old version soon.
-function process_hdf5_deriv(dir::String, deriv=false)
+function process_hdf5(dir::String, deriv::Bool=false)
 
     #if isfile(dir*"/evals.jld2")
         #this will not be good enough when we also want to find a derivative!
@@ -75,19 +75,32 @@ function process_hdf5_deriv(dir::String, deriv=false)
         parse.(ComplexF64, s)
     end
 
+    #number of evals/efuncs.
+    nevals = length(vals)
 
-    nconv = length(vals)
+    #allocates placeholder arrays used during computation.
+    ϕp, ϕpft = MID.PostProcessing.allocate_phi_arrays(grids, deriv=deriv)
 
-    #ie eval, rmax, label??
-    #label isn't a float though...
-    #cont_reconstruction = zeros(Float64, nconv, nconv, nconv)
-    rmode = zeros(Float64, nconv)
+    rms = Array{Float64}(undef, nevals)
+
+    plan = MID.PostProcessing.create_ft_plan(ϕpft, grids)
+
+    rgrid = inst_grids(grids)[1]
+
+    
+
+    #arrays to store the maximum value of ϕft and the correspondning r value.
+    rmarray = Array{Int64}(undef, grids.θ.N, grids.ζ.N)
+    ϕmarray = Array{Float64}(undef, grids.θ.N, grids.ζ.N)
+
+    
+    #rmode = zeros(Float64, nconv)
     #mlab = zeros(Int64, nconv)
     #nlab = zeros(Int64, nconv)
-    ω = zeros(ComplexF64, nconv)
-    modelabs = Tuple{Int, Int}[] 
+    ω = Array{ComplexF64}(undef, nevals)
+    mode_labs = Tuple{Int, Int}[] 
 
-    for i in 1:nconv
+    for i in 1:nevals
 
         #this is fkn slow af.
         #need to stick with jld2 I think.
@@ -99,39 +112,37 @@ function process_hdf5_deriv(dir::String, deriv=false)
 
         efunc = efunc_split[1, :] .+ efunc_split[2, :] * 1im
 
-        if deriv 
-            ϕ_recon = MID.reconstruct_phi_deriv(efunc, grids)
-        else
-            ϕ_recon = MID.reconstruct_phi(efunc, grids)
-        end
-        
-        ϕ, ϕft = MID.Spectrum.ft_phi(ϕ_recon, grids)
 
-        if deriv
-            rm, modelab = MID.Spectrum.label_mode(ϕft[:, :, :, 1], grids)
-        else
-            rm, modelab = MID.Spectrum.label_mode(ϕft, grids)
-        end
+        MID.PostProcessing.reconstruct_phi!(efunc, grids, ϕp, ϕpft, plan)
+        
+        rind, mode_lab = MID.PostProcessing.label_mode(ϕpft, grids, rmarray, ϕmarray)
+
+
+        #if deriv
+        #    rm, modelab = MID.Spectrum.label_mode(ϕft[:, :, :, 1], grids)
+        #else
+        #    rm, modelab = MID.Spectrum.label_mode(ϕft, grids)
+        #end
 
         
         #phi, phi_ft, rm, modelab = process_efunc(efunc, grids)
 
-        push!(modelabs, modelab)
+        push!(mode_labs, mode_lab)
 
-        rmode[i] = rm
+        rms[i] = rgrid[rind]
 
         #normalise the eigenvalues
         ω[i] = prob.geo.R0 * sqrt(vals[i])
         if deriv
-            save_object(dir * "/efuncs_deriv/"*efunc_write, ϕ)
-            save_object(dir * "/efuncs_ft_deriv/"*efunc_write, ϕft)
+            save_object(dir * "/efuncs_deriv/"*efunc_write, ϕp)
+            save_object(dir * "/efuncs_ft_deriv/"*efunc_write, ϕpft)
         else
-            save_object(dir * "/efuncs/"*efunc_write, ϕ)
-            save_object(dir * "/efuncs_ft/"*efunc_write, ϕft)
+            save_object(dir * "/efuncs/"*efunc_write, ϕp)
+            save_object(dir * "/efuncs_ft/"*efunc_write, ϕpft)
         end
         
     end
-    evals = MID.EvalsT(ω, rmode, modelabs)
+    evals = MID.EvalsT(ω, rms, mode_labs)
 
     save_object(dir*"/evals.jld2", evals)
 
@@ -145,7 +156,7 @@ end
 #so this didn't seem to work...
 #unclear why tbh.
 #don't understand what has changed, but this is taking way longer than before....
-function process_hdf5(dir::String)
+function process_hdf5_old(dir::String)
 
     if isfile(dir*"/evals.jld2")
         display("Processing already complete.")
