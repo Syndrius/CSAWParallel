@@ -76,8 +76,23 @@ function process_hdf5(dir::String, deriv::Bool=false)
     end
 
     #number of evals/efuncs.
-    nevals = length(vals)
+    #nevals = length(vals)
 
+    #this accounts for cases when no every single efuncs get written for some reason.
+    strs = readdir(dir*"/efuncs_raw")
+    #not sure if a lock hdf5 is always written?
+    #sometimes loc sometimes lock...
+    #may be best to just delete the appropriate number of evals
+    #or delete the loc vars from efuncs_raw if this happens again.
+    #these cases may just be cooked though lol.
+    if strs[end][end-2:end] == "loc"
+
+        nevals = Int64(length(strs)/2)
+    else
+        nevals = length(strs)
+    end
+
+    display(nevals)
     #allocates placeholder arrays used during computation.
     ϕp, ϕpft = MID.PostProcessing.allocate_phi_arrays(grids, deriv=deriv)
 
@@ -101,6 +116,7 @@ function process_hdf5(dir::String, deriv::Bool=false)
     mode_labs = Tuple{Int, Int}[] 
 
     for i in 1:nevals
+
 
         #this is fkn slow af.
         #need to stick with jld2 I think.
