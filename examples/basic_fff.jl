@@ -49,7 +49,9 @@ process_hdf5(dir_base)
 evals = evals_from_file(dir=dir_base);
 
 #wot is this, this is cooked af
-continuum_plot(evals);
+continuum_plot(evals, ymax=10);
+
+display(evals.ω[1:5])
 
 #found the tae, freq is significantly different for this low res example.
 tae_ind = find_ind(evals, 0.3835)

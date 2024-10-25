@@ -37,6 +37,11 @@ function par_post_process(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
         #PetscViewerFileSetName(viewer, dir*efunc_label)
 
         VecView(vecr, viewer)
+        #maybe the viewer is running our of memory???
+        #given we are able to solve but not write them all??
+        #and all the previous ones still have the .loc thing?
+        #this may have made a big difference for memory usage...
+        PetscViewerDestroy(viewer)
 
     end
     #PetscViewerDestroy(viewer)

@@ -19,7 +19,7 @@ Nr=100;
 geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
 rgrid = rfem_grid(N=Nr)
-θgrid = asm_grid(start=0, N = 6)
+θgrid = asm_grid(start=2, N = 2)
 ζgrid = asm_grid(start=-2, N = 1)
 grids = init_grids(rgrid, θgrid, ζgrid);
 
@@ -40,6 +40,21 @@ See convergence.sh for other examples of running in parallel.
 
 """
 
+#first 10 before being normed.
+"""
+vpr = 0.0014167655630368723 - 5.816043703656595e-20im
+vpr = 0.0013798042087976256 - 5.303827685943013e-21im
+vpr = 0.001376898964057661 - 1.3085633161023262e-19im
+vpr = 0.001373290765449895 - 5.785241153220936e-20im
+vpr = 0.0013669913435559468 + 1.3537179963861004e-20im
+vpr = 0.0013599287375589363 - 6.325193351626356e-18im
+vpr = 0.001352397218309042 + 4.7560503917302217e-17im
+vpr = 0.001339380207669367 + 6.173880765132081e-16im
+vpr = 0.0013344694061573198 + 1.1221046793288665e-16im
+vpr = 0.0013156435132545142 + 1.0892707095796296e-16im
+vpr = 0.0013124374116757099 + 1.62357826663483e-15im
+"""
+
 
 process_hdf5(dir_base) #unfort have we have to do this!
 #now we can read the data in. first the eigenvalues,
@@ -48,8 +63,12 @@ evals = evals_from_file(dir=dir_base);
 
 continuum_plot(evals);
 
+println(evals.ω[1:20])
 
-ϕft = efunc_from_file(dir=dir_base, ind=1);
+ind = find_ind(evals, 0.3764)
+
+
+ϕft = efunc_from_file(dir=dir_base, ind=ind);
 potential_plot(ϕft, grids);
 ϕ = efunc_from_file(dir=dir_base, ind=1, ft=false);
 #plot_potential(ϕ, grids);

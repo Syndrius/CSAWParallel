@@ -77,6 +77,34 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     #log_view for heaps of petsc info.
     slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info", nev, target_freq) * evals_str #* efuncs_str 
 
+
+    ############
+    #attempt at using CISS (https://slepc.upv.es/documentation/reports/str11.pdf)
+    #for finding all evals in range rather than a specific target.
+    #freq_low = 0.3^2 / prob.geo.R0^2
+    #freq_low = -10
+    #freq_high = 12^2 / prob.geo.R0^2
+    #slepcargs = @sprintf("-eps_type ciss -rg_type interval -rg_interval_endpoints %f,%f,-10,10 -eps_ciss_maxblocksize 4000 -eps_ciss_integration_points 1000", freq_low, freq_high) * evals_str
+
+    #slepcargs = @sprintf("-eps_interval %s,%s -st_type sinvert -st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_type superlu_dist -st_mat_superlu_dist_rowperm NOROWPERM", freq_low, freq_high) * evals_str
+    
+    #slepcargs = @sprintf("-eps_type ciss -st_type sinvert -rg_type interval -rg_interval_endpoints -10,10,-10,10") * evals_str
+    #display(slepcargs)
+    #slepcargs = @sprintf("-eps_type ciss -rg_type ellipse -rg_ellipse_center %s -mat_view ::ascii_info", target_freq) * evals_str
+
+
+    #so this will work, we just have to be realistic about the integration range,
+    #i guess it does use discrete points so would skip over many values if we consider an enourmous region.
+    #this will take some work to be of practical use.
+    #however may be w better option in the long run. Hard to know these things.
+    #slepcargs = @sprintf("-eps_type ciss -rg_type ellipse -rg_ellipse_center 0.0014 -rg_ellipse_radius 0.002 -rg_ellipse_vscale 1.0 -st_pc_factor_shift_type NONZERO") * evals_str
+
+
+
+    
+
+    #may need to try this outside of julia... with debug on, no fkn idea what is going on.
+
     #initialise slepc, setting the number of eigenvalues (nev) the target frequency and declaring that shift and inver should be used.
     #slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -mat_view ::ascii_info", nev, target_freq)
     #this should also init petsc
