@@ -17,8 +17,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
 
     #initialise the two structs.
-    met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
-    B = MID.BFieldT(zeros(3), zeros(3), zeros(3, 3), zeros(3, 3), 0.0, zeros(3))
+    met = MID.MetT()
+    B = MID.BFieldT()
 
     #not sure if this should be combined into 1 or something, focus on getting to work first.
     ξr, wgr = gausslegendre(grids.r.gp) #same as python!
@@ -28,7 +28,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     #S = hermite_basis(ξr, ξθ, ξζ)
     #ideally these would be combined in some way, this is fkn stupid.
-    S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ = hermite_basis(ξr, ξθ, ξζ)
+    S = hermite_basis(ξr, ξθ, ξζ)
 
     #the trial function
     #4 is the number of Hermite shape functions
@@ -95,6 +95,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     
 
+    tm = MID.WeakForm.TM()
 
     #we will start byy allowing the overlap and not including ghost cells.
     #now we loop through the grid
@@ -139,7 +140,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        W_and_I!(W, I, met, B, prob, r, θ, ζ)
+        W_and_I!(W, I, met, B, prob, r, θ, ζ, tm)
         #W_tor, I_tor = stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
         #stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
 
@@ -154,12 +155,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #may be a better way to do this in the future as v little is actually changing in each loop, especiallly since θ and ζ will have a normal grid.
         #ie perhaps this could just be done for each r or something. Not sure this will be the slowdown tho.
         #TODO -> change the inputs to a single structure, this is cooked 
-        create_local_basis!(Φ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, grids.θ.pf, grids.ζ.pf, dr, dθ, dζ)
+        create_local_basis!(Φ, S, grids.θ.pf, grids.ζ.pf, dr, dθ, dζ)
         #create_local_basis!(Φ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, grids.θ.pf, n1, dr, dθ)
 
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        create_local_basis!(Ψ, S, dSr, dSθ, dSζ, ddSrr, ddSrθ, ddSrζ, ddSθθ, ddSθζ, ddSζζ, -grids.θ.pf, -grids.ζ.pf, dr, dθ, dζ)
+        create_local_basis!(Ψ, S, -grids.θ.pf, -grids.ζ.pf, dr, dθ, dζ)
 
 
 
@@ -176,6 +177,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                 
                 left_ind = grid_to_index(rind, θind, ζind, testr, testθ, testζ, grids)
+
 
                 #only check for boundaries if this is true
                 #no other i's can possibly give boundaries
@@ -300,7 +302,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     nlist = mode_list(grids.ζ)
 
     #initialise the two structs.
-    met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
+    met = MID.metT()
     B = MID.BFieldT(zeros(3), zeros(3), zeros(3, 3), zeros(3, 3), 0.0, zeros(3))
 
     #not sure if this should be combined into 1 or something, focus on getting to work first.
@@ -563,8 +565,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     nlist = mode_list(grids.ζ)
 
     #initialise the two structs.
-    met = MID.MetT(zeros(3, 3), zeros(3, 3), zeros(3, 3, 3), zeros(3, 3, 3), 0.0, zeros(3))
-    B = MID.BFieldT(zeros(3), zeros(3), zeros(3, 3), zeros(3, 3), 0.0, zeros(3))
+    met = MID.MetT()
+    B = MID.BFieldT()
 
     ξ, wg = gausslegendre(grids.r.gp) #same as python!
 
@@ -615,6 +617,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         r_end = r_end-1
     end
 
+    tm = MID.WeakForm.tm()
+
     
 
     #now we loop through the grid
@@ -626,7 +630,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         jac = dr/2 #following thesis!
 
 
-        W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
+        W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid, tm)
 
 
         #uses the fft plan to take the fft of our two matrices.

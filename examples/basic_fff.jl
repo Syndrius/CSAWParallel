@@ -17,8 +17,8 @@ Nζ=1;
 geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
 rgrid = rfem_grid(N=Nr)
-θgrid = afem_grid(N=Nθ, pf=2);
-ζgrid = afem_grid(N=Nζ, pf=-2);
+θgrid = afem_grid(N=Nθ, pf=0);
+ζgrid = afem_grid(N=Nζ, pf=-0);
 grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
@@ -49,7 +49,7 @@ process_hdf5(dir_base)
 evals = evals_from_file(dir=dir_base);
 
 #wot is this, this is cooked af
-continuum_plot(evals, ymax=10);
+continuum_plot(evals, ymax=1);
 
 display(evals.ω[1:5])
 
@@ -62,7 +62,7 @@ tae_ind = find_ind(evals, 0.384)
 
 
 #the tae for this small res is ind=14.
-ϕft = efunc_from_file(dir = dir_base, ind=tae_ind);
+ϕft = efunc_from_file(dir = dir_base, ind=3);
 #potential plotting is fked af.
 potential_plot(ϕft, grids);
 
@@ -79,3 +79,18 @@ surface_plot(ϕ, grids)
 prob, grids = inputs_from_file(dir=dir_base);
 
 display(grids)
+
+
+
+rgrid, θgrid, ζgrid = inst_grids(grids)
+
+#adds back the periodicity.
+z = zeros(ComplexF64, grids.r.N, grids.ζ.N+1)
+
+z[:, 1:end-1] = ϕ[ :, 2, :]
+z[:, end] = ϕ[ :, 2, 1]
+
+ζgrid = range(0, 2π, grids.ζ.N+1)
+p = contourf(ζgrid, rgrid, real.(z), levels=100, color=:turbo)
+
+display(p)
