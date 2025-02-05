@@ -412,13 +412,13 @@ slepcargs = "-eps_nev 100 -eps_target 0 -st_type sinvert -memory_view -mat_view 
 
 SlepcInitialize(slepcargs)
 
-N = 40000
+N = 256
 
 Nx = 30
 Ny = Nx
 
-laplace_1d(N);
-#laplace_2d(Nx, Ny)
+#laplace_1d(N);
+laplace_2d(Nx, Ny)
 
 SlepcFinalize()
 MPI.Finalize()

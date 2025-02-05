@@ -40,6 +40,7 @@ function preallocate_matrix(grids::MID.GridsT)
     boundary_inds = compute_boundary_inds(grids)
 
     
+    
 
     #iterate through each row owned by this processor.
     for i in 1:local_n
@@ -68,16 +69,9 @@ function preallocate_matrix(grids::MID.GridsT)
 
 
 
+
+
     end
-    #println(local_n / 8)
-    #if (MPI.Comm_rank(MPI.COMM_WORLD)==3)
-        #display("dnnz")
-        #println(dnnz)
-        #display("inds")
-        #println(collect(inds))
-
-    #end
-
 
     #allocates the memory for hte matrices.
     #MatMPIAIJSetPreallocation(W, PetscInt(1), dnnz, PetscInt(1), onnz)
@@ -465,6 +459,13 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
         display("s nz")
         display(sub_nz_inds)
 
+    end
+
+
+
+    if sub_block_row == 1
+        sub_nz_inds1 = ss_nz_inds
+        sub_nz_inds2 = sub_block_size .+ ss_nz_inds
     end
 
 

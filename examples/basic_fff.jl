@@ -17,8 +17,8 @@ geo = GeoParamsT(R0=10.0);
 prob = init_problem(q=Axel_q, geo=geo); 
 
 rgrid = rfem_grid(N=Nr, gp=5)
-θgrid = afem_grid(N=Nθ, pf=2, gp=5);
-ζgrid = afem_grid(N=Nζ, pf=-2, gp=5);
+θgrid = afem_grid(N=Nθ, pf=0, gp=5);
+ζgrid = afem_grid(N=Nζ, pf=-0, gp=5);
 ae49d9024e63c680edb3c6ec3
 grids = init_grids(rgrid, θgrid, ζgrid);
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
