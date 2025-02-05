@@ -75,7 +75,7 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     #-eps_view for solver stuff
     #-memory_view for mem
     #log_view for heaps of petsc info.
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info", nev, target_freq) * evals_str #* efuncs_str 
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", nev, target_freq) * evals_str #* efuncs_str 
 
 
     ############
@@ -114,6 +114,7 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Preparing Matrices...")
     end
+    
     #preallocate the matrix memory.
     #this has an large effect on memory usage.
     W, I = preallocate_matrix(grids)
@@ -122,7 +123,9 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Constructing...")
     end
+    
     par_construct(W, I, prob, grids)
+
     
     MatAssemblyBegin(W, MAT_FINAL_ASSEMBLY)
     MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY)
@@ -141,6 +144,7 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     end
 
     #solve the generalised eigenvalue problem with W and I.
+    
     eps = par_solve(W, I)
 
     nconv = EPSGetConverged(eps)
@@ -158,6 +162,7 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     vecr, veci = MatCreateVecs(W)
 
     par_post_process(eps, dir, vecr, veci, nconv)
+    
 
     #process the evals and efuncs into practical formats.
     #old_par_post_process(eps, dir, grids, prob.geo, vecr, veci, nconv)

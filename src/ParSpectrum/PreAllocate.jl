@@ -23,13 +23,13 @@ function preallocate_matrix(grids::MID.GridsT)
 
     indstart, indend = MatGetOwnershipRange(W)
 
-    #@printf("Proc %d has %d to %d, local_n is %d\n", MPI.Comm_rank(MPI.COMM_WORLD), indstart, indend, local_n)
+    @printf("Proc %d has %d to %d, local_n is %d\n", MPI.Comm_rank(MPI.COMM_WORLD), indstart, indend, local_n)
 
 
 
-    inds = indstart:indend 
+    inds = indstart:indend -1
 
-
+    
 
     dnnz = zeros(Int32, local_n)
     onnz = zeros(Int32, local_n)
@@ -39,9 +39,7 @@ function preallocate_matrix(grids::MID.GridsT)
     #and for large grids should become negligible.
     boundary_inds = compute_boundary_inds(grids)
 
-    #if MPI.Comm_rank(MPI.COMM_WORLD) == 0
-        #display(boundary_inds)
-    #end
+    
 
     #iterate through each row owned by this processor.
     for i in 1:local_n
@@ -69,11 +67,21 @@ function preallocate_matrix(grids::MID.GridsT)
         onnz[i] += length(nz_inds[nz_inds .> indend])
 
 
+
     end
+    #println(local_n / 8)
+    #if (MPI.Comm_rank(MPI.COMM_WORLD)==3)
+        #display("dnnz")
+        #println(dnnz)
+        #display("inds")
+        #println(collect(inds))
+
+    #end
+
 
     #allocates the memory for hte matrices.
-    MatMPIAIJSetPreallocation(W, PetscInt(1), dnnz, PetscInt(1), onnz)
-    MatMPIAIJSetPreallocation(I, PetscInt(1), dnnz, PetscInt(1), onnz)
+    #MatMPIAIJSetPreallocation(W, PetscInt(1), dnnz, PetscInt(1), onnz)
+    #MatMPIAIJSetPreallocation(I, PetscInt(1), dnnz, PetscInt(1), onnz)
 
     #finish the matrix setup.
     MatSetUp(W)
@@ -391,6 +399,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     ss_block_row = div(rem(rem(indslocal[ind], block_size), sub_block_size), ss_block_size) + 1
 
+
     """
     How this works:
     We find the indicies for the smallest blocks first.
@@ -416,6 +425,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
     else
         ss_nz_inds = collect((ss_block_row-2)*ss_block_size+1:(ss_block_row+1)*ss_block_size) 
     end
+
 
 
 
@@ -446,6 +456,23 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
         #nzend = (sub_block_row+1) * sub_block_size
     end
 
+    if (indslocal[ind]==320)
+        display(ss_block_row)
+        display(sub_block_row)
+        display(block_row)
+        display("ss nz")
+        display(ss_nz_inds)
+        display("s nz")
+        display(sub_nz_inds)
+
+    end
+
+
+
+    if sub_block_row == 1
+        sub_nz_inds1 = ss_nz_inds
+        sub_nz_inds2 = sub_block_size .+ ss_nz_inds
+    end
 
 
     if block_row == 1

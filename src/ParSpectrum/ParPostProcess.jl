@@ -98,6 +98,7 @@ function process_hdf5(dir::String, deriv::Bool=false)
     end
 
     display(nevals)
+    nevals = length(vals)
     #allocates placeholder arrays used during computation.
     ϕp, ϕpft = MID.PostProcessing.allocate_phi_arrays(grids, deriv=deriv)
 
