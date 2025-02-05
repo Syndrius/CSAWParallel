@@ -575,7 +575,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     ξ, wg = gausslegendre(grids.r.gp) #same as python!
 
     #gets the basis 
-    H, dH, ddH = hermite_basis(ξ)
+    S = hermite_basis(ξ)
 
     #the trial function
     Φ = zeros(ComplexF64, 4, 9, grids.r.gp)
@@ -621,7 +621,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         r_end = r_end-1
     end
 
-    tm = MID.WeakForm.tm()
+    tm = MID.WeakForm.TM()
 
     
 
@@ -645,12 +645,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #loop over the fourier components of the trial function
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
-            create_local_basis!(Φ, H, dH, ddH, m1, n1, jac)
+            create_local_basis!(Φ, S, m1, n1, jac)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate
-                create_local_basis!(Ψ, H, dH, ddH, -m2, -n2, jac)
+                create_local_basis!(Ψ, S, -m2, -n2, jac)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nθ, Nθ) + 1
