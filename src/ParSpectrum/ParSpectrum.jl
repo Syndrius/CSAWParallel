@@ -75,7 +75,8 @@ function par_compute_spectrum(; prob::MID.ProblemT, grids::MID.GridsT, target_fr
     #-eps_view for solver stuff
     #-memory_view for mem
     #log_view for heaps of petsc info.
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", nev, target_freq) * evals_str #* efuncs_str 
+    #need to make it auto detect if hermitian or not
+    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", nev, target_freq) * evals_str #* efuncs_str 
 
 
     ############

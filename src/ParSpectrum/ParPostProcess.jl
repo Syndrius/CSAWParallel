@@ -25,7 +25,7 @@ function par_post_process(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
         #changing the inputs for this made no difference.
         EPSGetEigenvector(eps, ieig, vecr, veci)
 
-        efunc_label = "efuncs_raw/"*@sprintf("efunc%04d.hdf5", ieig+1)
+        efunc_label = "efuncs_raw/"*@sprintf("efunc%05d.hdf5", ieig+1)
 
         #certainly not ideal to be creating a viewer each time..
         viewer = PetscViewerHDF5Open(MPI.COMM_WORLD, dir*efunc_label, FILE_MODE_WRITE)
@@ -126,8 +126,8 @@ function process_hdf5(dir::String, deriv::Bool=false)
 
         #this is fkn slow af.
         #need to stick with jld2 I think.
-        efunc_read = @sprintf("efunc%04d.hdf5", i)
-        efunc_write = @sprintf("efunc%04d.jld2", i)
+        efunc_read = @sprintf("efunc%05d.hdf5", i)
+        efunc_write = @sprintf("efunc%05d.jld2", i)
 
         #unfort doesn't handle complex numbers v well
         efunc_split = load_object(dir*"/efuncs_raw/"*efunc_read)#[1, :]
