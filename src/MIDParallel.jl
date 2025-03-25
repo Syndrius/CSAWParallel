@@ -36,6 +36,7 @@ using MIDParallel.ParSpectrum; export qfm_spectrum_from_file
 using MIDParallel.ParSpectrum; export process_hdf5
 using MIDParallel.ParSpectrum; export process_hdf5_deriv
 using MIDParallel.ParSpectrum; export par_construct_surfaces
+using MIDParallel.ParSpectrum; export gather_surfs
 
 
 

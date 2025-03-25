@@ -5,6 +5,7 @@ using MIDParallel
 
 
 
+#= This is defined inside MID now.
 function qfm_benchmark_q(r::Float64)
     #a = 0.954545
     #b = 1.515151
@@ -14,6 +15,7 @@ function qfm_benchmark_q(r::Float64)
 
     return a + b*r^2, 2 * b * r
 end
+=#
 
 #%%
 #define the problem to solve
@@ -31,4 +33,16 @@ prob = init_problem(q=qfm_benchmark_q, geo=geo, isl=isl)
 
 qlist, plist = farey_tree(5, 2, 1, 3, 1)
 
-par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")
+#par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")
+
+"""
+Now run 
+>>mpiexec -n NPROCS julia examples/qfm_surfaces.jl
+
+Then the data must be combined in serial, by running
+>>julia -e 'using MIDParallel; gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", NPROCS)'
+"""
+
+
+
+par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/home/149/mt3516/island_damping/MIDParallel/data/qfm/")

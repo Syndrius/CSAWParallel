@@ -47,6 +47,7 @@ export process_hdf5_deriv
 include("ParQFM.jl")
 
 export par_construct_surfaces
+export gather_surfs
 
 include("QFMConstruct.jl")
 
