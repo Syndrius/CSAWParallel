@@ -30,19 +30,25 @@ geo = init_geo(R0=R0)
 
 prob = init_problem(q=qfm_benchmark_q, geo=geo, isl=isl)
 
+#%%
 
-qlist, plist = farey_tree(5, 2, 1, 3, 1)
+#this is not being split properly!
+qlist, plist = farey_tree(4, 2, 1, 3, 1)
+
+#%%
 
 #par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")
 
 """
 Now run 
->>mpiexec -n NPROCS julia examples/qfm_surfaces.jl
+>>mpiexec -n 2 julia examples/qfm_surfaces.jl
 
 Then the data must be combined in serial, by running
 >>julia -e 'using MIDParallel; gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", NPROCS)'
+>>julia -e 'using MIDParallel; gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)'
 """
 
 
 
-par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/home/149/mt3516/island_damping/MIDParallel/data/qfm/")
+#par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/home/149/mt3516/island_damping/MIDParallel/data/qfm/")
+par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")

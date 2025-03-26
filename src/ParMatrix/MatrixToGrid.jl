@@ -19,8 +19,8 @@ function matrix_to_grid(indstart::Int64, indend::Int32, grids::MID.FFFGridsT)
     ζend = mod(div(indend-1, 8), grids.ζ.N) + 1
 
 
-    @printf("Indstart of %d, gives (%d, %d, %d)\n", indstart, rstart, θstart, ζstart)
-    @printf("Indend of %d, gives (%d, %d, %d)\n", indend, rend, θend, ζend)
+    #@printf("Indstart of %d, gives (%d, %d, %d)\n", indstart, rstart, θstart, ζstart)
+    #@printf("Indend of %d, gives (%d, %d, %d)\n", indend, rend, θend, ζend)
 
     grid_points = Tuple{Int, Int, Int}[]
 
@@ -53,7 +53,7 @@ function matrix_to_grid(indstart::Int64, indend::Int32, grids::MID.FFFGridsT)
         push!(grid_points, (rend, θend, i))
     end
 
-    @printf("For indstart, indend of (%d, %d), we have (%d)\n", indstart, indend, size(grid_points)[1])
+    #@printf("For indstart, indend of (%d, %d), we have (%d)\n", indstart, indend, size(grid_points)[1])
     
     #display(rstart)
     #display(θstart)

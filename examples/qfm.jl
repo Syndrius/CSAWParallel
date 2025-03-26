@@ -8,7 +8,7 @@ using MIDParallel
 using MIDViz
 using Plots; plotlyjs()
 #%%
-Nr = 100
+Nr = 30
 
 geo = init_geo(R0=4.0)
 
@@ -17,13 +17,15 @@ isl = init_island(m0=3, n0=2, A=0.005)
 prob = init_problem(q=qfm_benchmark_q, geo=geo, isl=isl)
 
 sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.7)
-ϑgrid = init_grid(type=:as, N = 4, start = 2)
-φgrid = init_grid(type=:as, N = 3, start = -2)
+#ϑgrid = init_grid(type=:as, N = 4, start = 2)
+#φgrid = init_grid(type=:as, N = 3, start = -2)
+ϑgrid = init_grid(type=:af, N = 6, pf=2)
+φgrid = init_grid(type=:af, N = 2, pf=-2)
 
 grids = init_grids(sgrid, ϑgrid, φgrid)
 
-#dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
-dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
+dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
+#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
 #%%
 inputs_to_file(prob=prob, grids=grids, dir=dir_base)
 
@@ -42,6 +44,8 @@ This kind of already assumes the surfaces have been created
 process_hdf5(dir_base)
 #%%
 
-evals = evals_from_file(dir=dir_base)
+evals = evals_from_file(dir=dir_base);
 
-continuum_plot(evals)
+continuum_plot(evals)#, ymax=40.5)
+
+length(evals.ω)

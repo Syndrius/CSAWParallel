@@ -17,8 +17,8 @@ function par_construct_surfaces(plist, qlist, sguesslist, prob, dir)
 
     root = 0 #or 1?
 
-    met = MID.MetT()
-    B = MID.BFieldT()
+    met = MetT()
+    B = BFieldT()
 
     comm = MPI.COMM_WORLD
     rank = MPI.Comm_rank(comm)
@@ -31,12 +31,15 @@ function par_construct_surfaces(plist, qlist, sguesslist, prob, dir)
     #local_slist = collect(Iterators.partition(sguesslist, nprocs))[rank+1]
 
     #this is a suboptimal split, the last proc will be doing less work, but who cares tbh.
-    local_plist = collect(Iterators.partition(plist, length(plist) ÷ nprocs + 1))[rank+1]
-    local_qlist = collect(Iterators.partition(qlist, length(qlist) ÷ nprocs + 1))[rank+1]
-    local_slist = collect(Iterators.partition(sguesslist, length(sguesslist) ÷ nprocs + 1))[rank+1]
+    #local_plist = collect(Iterators.partition(plist, length(plist) ÷ nprocs + 1))[rank+1]
+    #local_qlist = collect(Iterators.partition(qlist, length(qlist) ÷ nprocs + 1))[rank+1]
+    #local_slist = collect(Iterators.partition(sguesslist, length(sguesslist) ÷ nprocs + 1))[rank+1]
+    local_plist = mpi_split_array(plist)
+    local_qlist = mpi_split_array(qlist)
+    local_slist = mpi_split_array(sguesslist)
 
 
-    local_surfs = MID.construct_surfaces(local_plist, local_qlist, local_slist, prob)
+    local_surfs = construct_surfaces(local_plist, local_qlist, local_slist, prob)
 
     #so we cant just send the surfaces because they are a weird type. Instead we will send all of the data individually!
     #surfaces = MPI.Gather(local_surfs, root, comm)
@@ -97,12 +100,38 @@ function par_construct_surfaces(plist, qlist, sguesslist, prob, dir)
 end
 
 
+function mpi_split_array(array)
+    #assumes MPI.init() has already been called
+
+    comm = MPI.COMM_WORLD
+    rank = MPI.Comm_rank(comm)
+    nprocs = MPI.Comm_size(comm) #total number of workers including root.
+    
+    counts = zeros(Int64, nprocs)
+    splits = zeros(Int64, nprocs+1)
+    ar_size = length(array)
+
+    counts_guess = Int64(div(ar_size, nprocs, RoundDown))
+    Remainder = Int64(ar_size - counts_guess*nprocs)
+    counts .= counts_guess
+    for i in 1:Remainder
+        counts[i] += 1
+    end
+    #display(counts)
+
+    splits[1:end-1] .= cumsum(append!([0], counts))[1:nprocs] .+ 1
+    splits[end] = ar_size+1
+
+    #display(splits)
+
+    return array[splits[rank+1]:(splits[rank+2] -1)]
+end
 
 #stupid function because we couldn't get MPI gather to work for the structs storing the qfm surfaces.
 #this is a disaster, as we cannot call this easily, however, it does work!
 function gather_surfs(dir, procs)
 
-    surfs = MID.QFMSurfaceT[]
+    surfs = QFMSurfaceT[]
 
     for i in 1:procs
         local_surfs = load_object(dir * "local_surfs"*string(i-1) * ".jld2")

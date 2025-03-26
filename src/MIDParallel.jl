@@ -27,16 +27,22 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
 
 module MIDParallel
 
+include("ParMatrix/ParMatrix.jl")
 
-include("ParSpectrum/ParSpectrum.jl")
 
-using MIDParallel.ParSpectrum; export par_compute_spectrum
-using MIDParallel.ParSpectrum; export par_spectrum_from_file
-using MIDParallel.ParSpectrum; export qfm_spectrum_from_file
-using MIDParallel.ParSpectrum; export process_hdf5
-using MIDParallel.ParSpectrum; export process_hdf5_deriv
-using MIDParallel.ParSpectrum; export par_construct_surfaces
-using MIDParallel.ParSpectrum; export gather_surfs
+
+include("ParConstruct/ParConstruct.jl")
+
+using ..ParConstruct; export par_construct_surfaces
+using ..ParConstruct; export gather_surfs
+
+include("ParSolve/ParSolve.jl")
+
+#include("ParSpectrum/ParSpectrum.jl")
+
+using ..ParSolve; export par_compute_spectrum
+using ..ParSolve; export qfm_spectrum_from_file
+using ..ParSolve; export process_hdf5
 
 
 
