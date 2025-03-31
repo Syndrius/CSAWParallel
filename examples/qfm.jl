@@ -1,4 +1,4 @@
-
+#this example with the chaos system seems to be working ok.
 #actual example of qfm case.
 #note that this assumes the surfaces have already been generated, example can be found in qfm_surfaces.jl
 
@@ -8,13 +8,26 @@ using MIDParallel
 using MIDViz
 using Plots; plotlyjs()
 #%%
+#generating qfm surfaces in parallel requires they are combined later.
+#this assumes qfm_surfaces.jl has been run with 2 procs.
+gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)
+#%%
 Nr = 30
 
-geo = init_geo(R0=4.0)
 
-isl = init_island(m0=3, n0=2, A=0.005)
+R0=10.0
 
-prob = init_problem(q=qfm_benchmark_q, geo=geo, isl=isl)
+#amp needs further thought!
+#define the non-resonant island
+k = 0.00022
+isl = init_island(m0=5, n0=-2, A=k/5)
+isl2 = init_island(m0=7, n0=-3, A=k/7)
+
+geo = init_geo(R0=R0)
+
+#to solve non-Hermitian
+#flr = MID.Structures.FLRT(δ = 1e-18)
+prob = init_problem(q=qfm_benchmark_q, met=:cylinder, geo=geo, isl=isl, isl2=isl2)#, flr=flr)
 
 sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.7)
 #ϑgrid = init_grid(type=:as, N = 4, start = 2)

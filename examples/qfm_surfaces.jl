@@ -3,37 +3,28 @@ using MID
 using MIDParallel
 
 
-
-
-#= This is defined inside MID now.
-function qfm_benchmark_q(r::Float64)
-    #a = 0.954545
-    #b = 1.515151
-    
-    a = 1.93333
-    b = 1.66666
-
-    return a + b*r^2, 2 * b * r
-end
-=#
-
 #%%
 #define the problem to solve
 
-R0=4.0
+R0=10.0
 
 #amp needs further thought!
 #define the non-resonant island
-isl = init_island(m0=3, n0=2, A=0.005)
+k = 0.00022
+isl = init_island(m0=5, n0=-2, A=k/5)
+isl2 = init_island(m0=7, n0=-3, A=k/7)
 
 geo = init_geo(R0=R0)
 
-prob = init_problem(q=qfm_benchmark_q, geo=geo, isl=isl)
+#to solve non-Hermitian
+#flr = MID.Structures.FLRT(δ = 1e-18)
+prob = init_problem(q=qfm_benchmark_q, met=:cylinder, geo=geo, isl=isl, isl2=isl2)#, flr=flr)
+
 
 #%%
 
 #this is not being split properly!
-qlist, plist = farey_tree(4, 2, 1, 3, 1)
+qlist, plist = farey_tree(5, 2, 1, 3, 1)
 
 #%%
 
