@@ -24,7 +24,7 @@ prob = init_problem(q=qfm_benchmark_q, met=:cylinder, geo=geo, isl=isl, isl2=isl
 #%%
 
 #this is not being split properly!
-qlist, plist = farey_tree(5, 2, 1, 3, 1)
+qlist, plist = farey_tree(4, 2, 1, 3, 1)
 
 #%%
 
@@ -41,5 +41,5 @@ Then the data must be combined in serial, by running
 
 
 
-#par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/home/149/mt3516/island_damping/MIDParallel/data/qfm/")
-par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")
+par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/home/149/mt3516/island_damping/MIDParallel/data/qfm/")
+#par_construct_surfaces(plist, qlist, 0.5 .* ones(length(qlist)), prob, "/Users/matt/phd/MIDParallel/data/qfm/")

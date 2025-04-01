@@ -11,6 +11,7 @@ using Plots; plotlyjs()
 #generating qfm surfaces in parallel requires they are combined later.
 #this assumes qfm_surfaces.jl has been run with 2 procs.
 gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)
+gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", 2)
 #%%
 Nr = 30
 
@@ -37,8 +38,8 @@ sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.7)
 
 grids = init_grids(sgrid, ϑgrid, φgrid)
 
-dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
+#dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
+dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
 #%%
 inputs_to_file(prob=prob, grids=grids, dir=dir_base)
 
@@ -61,4 +62,9 @@ evals = evals_from_file(dir=dir_base);
 
 continuum_plot(evals)#, ymax=40.5)
 
-length(evals.ω)
+
+ind = find_ind(evals, 0.2533)
+
+ϕft = efunc_from_file(dir = dir_base, ind=ind);
+
+potential_plot(ϕft, grids)
