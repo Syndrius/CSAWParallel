@@ -10,18 +10,19 @@ using MIDParallel
 #using Plots; plotlyjs() #having this here, and installed in the global environment tricks it into using plotlyjs for interactive plots. This is an awful solution.
 #also gives some fkn warning, I think becuase MID doesn't have PlotlyJS.
 
-
+#this function should be able to do both normal case and qfm case now.
 #simplest case for running jobs with gadi. Bash script will create appropriate inputs, then this will read the inputs and solve.
 #not sure if this should be contained within MIDParallel somehow???
 dir = ARGS[1]
-freq = ARGS[2]
+#freq = ARGS[2]
 
-if length(ARGS) > 2
-    nev = parse(Int64, ARGS[3])
+if length(ARGS) > 1
+    surfs_dir = ARGS[2]
+    qfm_spectrum_from_file(dir=dir, qfm_surfs=surfs_dir)
 else
-    nev = 200
+    par_spectrum_from_file(dir=dir)
 end
 
 #increased number of evals.
 #should have that as an input tbh!
-par_spectrum_from_file(dir=dir, target_freq=parse(Float64, freq), nev=nev)
+#par_spectrum_from_file(dir=dir, target_freq=parse(Float64, freq), nev=nev)

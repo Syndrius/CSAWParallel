@@ -42,7 +42,8 @@ include("ParSolve/ParSolve.jl")
 
 using ..ParSolve; export par_compute_spectrum
 using ..ParSolve; export qfm_spectrum_from_file
-using ..ParSolve; export process_hdf5
+using ..ParSolve; export par_spectrum_from_file
+using ..ParSolve; export par_post_process
 
 
 
