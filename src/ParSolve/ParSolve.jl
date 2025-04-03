@@ -171,10 +171,8 @@ end
 
 #this function needs to not be an independent function!
 #this function is probably telling us that the surfs belong in the problem!
-function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, target_freq=0.0::Float64, nev=200::Int64, dir::String, surfs::Array{QFMSurfaceT})
+function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, dir::String, surfs::Array{QFMSurfaceT})
 
-    #un-normalise the target frequency for the shift and invert
-    target_freq = target_freq^2 / prob.geo.R0^2 
 
 
     MPI.Init()
@@ -190,7 +188,9 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, target_freq=0.0::
     #-memory_view for mem
     #log_view for heaps of petsc info.
     #need to make it auto detect if hermitian or not
-    slepcargs = @sprintf("-eps_nev %d -eps_target %s -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", nev, target_freq) #* evals_str #* efuncs_str 
+    #probably want to actually set nev later. Maybe best if much of this is not actually set here manually. rather it should be set based on the solver type
+    #eg non-hermitain etc.
+    slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
 
 
     ############
@@ -260,37 +260,7 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, target_freq=0.0::
 
     vecr, veci = MatCreateVecs(W)
 
-    #solve the generalised eigenvalue problem with W and I.
-
-    #if (target_freq isa Array)
-    #for testing@
-    slice = true
-    if (slice)
-
-        #un-normliase the targtes
-        #for testing, we probably need a min/max and nshifts unless we can actualy pass in an array somehow!
-        targets = collect(0.0:0.4:1.0) .^2 ./ prob.geo.R0^2
-
-        
-        nconv = slice_solve(W, I, targets, dir, vecr, veci)
-
-
-    else
-
-        #un-normalise the target frequency for the shift and invert
-        target_freq = target_freq^2 / prob.geo.R0^2 
-        
-        nconv = par_shift_invert_solve(W, I, target_freq, dir, vecr, veci)
-
-
-        
-        #vectors are used to store the eigenfunctions
-        #vecr, veci = MatCreateVecs(W)
-
-        #par_post_process(eps, dir, vecr, veci, nconv)
-
-    end 
-
+    nconv = par_solve(W, I, solver, dir, vecr, veci)
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         @printf("Solving complete, %d eigenvalues found.\n", nconv)
@@ -326,14 +296,14 @@ end
 Computes the spectrum in parallel from inputs stored in files in the given directory.
 Case for qfm surfaces as well, subject to lots of change!
 """
-function qfm_spectrum_from_file(; dir::String, qfm_surfs::String, target_freq::Float64, nev=100::Int64)
+function qfm_spectrum_from_file(; dir::String, qfm_surfs::String)
 
     #should only root be doing this?
     prob, grids, solver = inputs_from_file(dir=dir)
 
     surfs = load_object(qfm_surfs)
 
-    qfm_compute_spectrum(prob=prob, grids=grids, solver=solver, surfs=surfs)
+    qfm_compute_spectrum(prob=prob, grids=grids, solver=solver, surfs=surfs, dir=dir)
 
 end
 

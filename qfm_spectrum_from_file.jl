@@ -15,14 +15,8 @@ using MIDParallel
 #not sure if this should be contained within MIDParallel somehow???
 dir = ARGS[1]
 surfs_dir = ARGS[2]
-freq = ARGS[3]
 
-if length(ARGS) > 3
-    nev = parse(Int64, ARGS[4])
-else
-    nev = 200
-end
 
 #increased number of evals.
 #should have that as an input tbh!
-qfm_spectrum_from_file(dir=dir, qfm_surfs=surfs_dir, target_freq=parse(Float64, freq), nev=nev)
+qfm_spectrum_from_file(dir=dir, qfm_surfs=surfs_dir)
