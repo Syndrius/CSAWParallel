@@ -128,9 +128,9 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        W_and_I!(W, I, met, B, prob, r, θ, ζgrid)
-        #W_tor, I_tor = stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
-        #stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
+        W_and_I!(W, I, B, met, prob, r, θ, ζgrid)
+        #W_tor, I_tor = stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
+        #stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
 
         #display(W[:, :, 1, 1, 1])
 
@@ -259,6 +259,7 @@ end
 
 
 
+#so I guess this hasn't actually been implemented yet huh. real nice.
 function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FFSGridsT, surfs::Array{QFMSurfaceT})
 
 
@@ -383,9 +384,9 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        W_and_I!(W, I, met, B, prob, r, θ, ζgrid)
-        #W_tor, I_tor = stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
-        #stupid_W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid)
+        W_and_I!(W, I, B, met, prob, r, θ, ζgrid)
+        #W_tor, I_tor = stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
+        #stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
 
         #display(W[:, :, 1, 1, 1])
 
