@@ -2,6 +2,7 @@
 using MID
 using MIDParallel
 
+#this is probably a bit useless now!
 
 #%%
 #define the problem to solve

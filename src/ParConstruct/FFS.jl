@@ -1,6 +1,8 @@
 
 #note that these do not work! have not been updated to new version of weak form
 #TODO
+#qfm version is now working.
+#both functions in here are a mess though!
 """
     construct(prob::ProblemT, grids::FFSGridsT)
 
@@ -32,7 +34,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #gets the basis 
 
-    S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ = hermite_basis(ξr, ξθ)
+    S = hermite_basis(ξr, ξθ)
 
     #the trial function
     #4 is the number of Hermite shape functions
@@ -278,7 +280,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     qfm_met = MetT()
     qfm_B = BFieldT()
 
-    surf_itp = create_surf_itp(surfs)
+    surf_itp, sd = create_surf_itp(surfs)
 
     #not sure if this should be combined into 1 or something, focus on getting to work first.
     ξr, wgr = gausslegendre(grids.r.gp) #same as python!
@@ -286,7 +288,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #gets the basis 
 
-    S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ = hermite_basis(ξr, ξθ)
+    S = hermite_basis(ξr, ξθ)
 
     #the trial function
     #4 is the number of Hermite shape functions
@@ -384,7 +386,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        W_and_I!(W, I, B, met, prob, r, θ, ζgrid)
+        W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met,  prob, r, θ, ζgrid, tm, surf_itp, CT, sd)
         #W_tor, I_tor = stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
         #stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
 
@@ -401,12 +403,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for r, seems pointless.
-            create_local_basis!(Φ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, grids.θ.pf, n1, dr, dθ)
+            create_local_basis!(Φ, S, grids.θ.pf, n1, dr, dθ)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                create_local_basis!(Ψ, S, dSr, dSθ, ddSrr, ddSrθ, ddSθθ, -grids.θ.pf, -n2, dr, dθ)
+                create_local_basis!(Ψ, S, -grids.θ.pf, -n2, dr, dθ)
 
                 #extract the relevant indicies from the ffted matrices.
                 #mind = mod(k1-k2 + nθ, nθ) + 1

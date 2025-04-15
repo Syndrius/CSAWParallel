@@ -310,7 +310,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     qfm_met = MetT()
     qfm_B = BFieldT()
 
-    surf_itp = create_surf_itp(surfs)
+    surf_itp, sd = create_surf_itp(surfs)
 
     #not sure if this should be combined into 1 or something, focus on getting to work first.
     ξr, wgr = gausslegendre(grids.r.gp) #same as python!
@@ -436,7 +436,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #I_and_W!(I, W, B, q_profile, met, compute_met, dens, r, θgrid, ζgrid, δ, isl, R0)
 
         #hopefully this step will be smaller! but we have twice the loop, so everything else will be longer!
-        W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, r, θ, ζ, tm, surf_itp, CT)
+        W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, r, θ, ζ, tm, surf_itp, CT, sd)
         #W_tor, I_tor = stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
         #stupid_W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid)
 

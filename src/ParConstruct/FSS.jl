@@ -234,7 +234,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     qfm_met = MetT()
     qfm_B = BFieldT()
 
-    surf_itp = create_surf_itp(surfs)
+    surf_itp, sd = create_surf_itp(surfs)
 
     ξ, wg = gausslegendre(grids.r.gp) #same as python!
 
@@ -299,7 +299,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         jac = ds/2 #following thesis!
 
 
-        W_and_I!(W, I, tor_met, tor_B, qfm_met, qfm_B, prob, s, ϑgrid, φgrid, tm, surf_itp, CT)
+        W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, s, ϑgrid, φgrid, tm, surf_itp, CT, sd)
 
 
         #uses the fft plan to take the fft of our two matrices.
