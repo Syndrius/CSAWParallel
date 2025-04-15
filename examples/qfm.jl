@@ -6,38 +6,51 @@
 using MID
 using MIDParallel
 using MIDViz
+using JLD2
 #using Plots; plotlyjs()
 #%%
 #generating qfm surfaces in parallel requires they are combined later.
 #this assumes qfm_surfaces.jl has been run with 2 procs.
-gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)
-gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", 2)
+#gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)
+#gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", 2)
 #%%
-R0=10.0
+R0=4.0
 
 #amp needs further thought!
 #define the non-resonant island
-k = 0.00022
-isl = init_island(m0=5, n0=-2, A=k/5)
-isl2 = init_island(m0=7, n0=-3, A=k/7)
+k = 0.0006
+isl = init_island(m0=3, n0=-2, A=k/3)
+isl2 = init_island(m0=4, n0=-3, A=k/4)
 
 geo = init_geo(R0=R0)
 
 #to solve non-Hermitian
 #flr = MID.Structures.FLRT(δ = 1e-18)
-prob = init_problem(q=qfm_benchmark_q, met=:cylinder, geo=geo, isl=isl, isl2=isl2)#, flr=flr)
+prob = init_problem(q=qfm_q, geo=geo, isl=isl, isl2=isl2)#, flr=flr)
 #%%
-Nr = 30
-sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.7)
-#ϑgrid = init_grid(type=:as, N = 4, start = 2)
-#φgrid = init_grid(type=:as, N = 3, start = -2)
-ϑgrid = init_grid(type=:af, N = 6, pf=2)
-φgrid = init_grid(type=:af, N = 2, pf=-2)
+#instead just generate them in serial.
+#we may want surfs to file or something so that we don't explicitly need jld2 as an import.
+qlist, plist = farey_tree(4, 1, 1, 2, 1)
+guess_list = 0.2 .* ones(length(qlist))
+@time surfs = construct_surfaces(plist, qlist, guess_list, prob);
+
+plot_surfs(surfs);
+
+#%%
+save_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2", surfs)
+
+#%%
+Nr = 50
+sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.8)
+#ϑgrid = init_grid(type=:as, N = 4, start = 1)
+φgrid = init_grid(type=:as, N = 3, start = -2)
+ϑgrid = init_grid(type=:af, N = 6, pf=3)
+#φgrid = init_grid(type=:af, N = 2, pf=-2)
 
 grids = init_grids(sgrid, ϑgrid, φgrid)
 #%%
 
-solver = init_solver(nev=100, targets=[0.2, 0.4], prob=prob)
+solver = init_solver(nev=100, targets=[0.2, 0.3, 0.4], prob=prob)
 #%%
 dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
