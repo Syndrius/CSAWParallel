@@ -1,29 +1,19 @@
 
-#TODO
 """
-Constructs a portion of the total matrix. Each worker is given a chunk of the radial finite elements grid based on r_start and r_end. Otherwise this function is essentially identical to MID.construct.
+    par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
 
-# Args
-- prob::ProblemT Struct containing the functions and parameters that define the problem we are solving
-- grids::GridT Grids to solve over.
-- r_start::Int64 Start of this workers chunk of the radial grid.
-- r_end::Int64 End of this workers chunk of the radial grid.
+Constructs the W and I matrices in parallel for the fss case.
 """
-#new version that directly adds to the matrices.
-#can probably be significantly improved by making each proc add only to the bits it is storing.
 function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
 
-    #Wf and If are fkn stupid names.
-
-
-    #nθ, mlist, θgrid = MID.spectral_grid(grids.pmd)
-    #nζ, nlist, ζgrid = MID.spectral_grid(grids.tmd)
-
+    #instantiate the grids into arrays.
     rgrid, θgrid, ζgrid = inst_grids(grids)
 
+    #for spectral method we need the length of the arrays
     Nθ = length(θgrid)
     Nζ = length(ζgrid)
 
+    #and the list of modes to consider.
     mlist = mode_list(grids.θ)
     nlist = mode_list(grids.ζ)
 
@@ -31,7 +21,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     met = MetT()
     B = BFieldT()
 
-    ξ, wg = gausslegendre(grids.r.gp) #same as python!
+    #compute the gaussian qudrature points for finite elements.
+    ξ, wg = gausslegendre(grids.r.gp) 
 
     #gets the basis 
     S = hermite_basis(ξ)
@@ -41,8 +32,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #the test function.
     Ψ = zeros(ComplexF64, 4, 9, grids.r.gp)   
 
-    #rgrid = MID.construct_rgrid(grids)
-
 
     #For parallel we don't predefine the array size, as each proc will have a different interaction 
     #with the boundaries, changing the sizes.
@@ -51,59 +40,53 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     Idata = Array{ComplexF64}(undef, 0)
     Wdata = Array{ComplexF64}(undef, 0)
 
-
     boundary_inds = compute_boundary_inds(grids)
 
+    #generalised eval problem WΦ = ω^2 I Φ
+    #these matrices store the local contribution, i.e. at each grid point, for the global matrices I and W.
+    I = local_matrix_size(grids)
+    W = local_matrix_size(grids)
 
-    I = zeros(ComplexF64, 9, 9, grids.r.gp, Nθ, Nζ)
-    W = zeros(ComplexF64, 9, 9, grids.r.gp, Nθ, Nζ)
 
-
-    #this gives a warning but seems to work perfectly
-    #and incredibly efficiently!
-    #this essentially defines a plane to fft I, (and W as they are the same size), which can be exectued
-    #via p * I, this is done in place and seems to be mad efficient.
+    #plan for the fft
     p = plan_fft!(W, [4, 5])
 
 
+    #gets the indicies that this core owns
     indstart, indend = MatGetOwnershipRange(Wmat)
 
-    #TODO Move this!
-    #plus one to shift to julia indexing
-    r_start = Int64(indstart / (grids.θ.N * grids.ζ.N * 2)) + 1
-    #this has a plus 1 for indexing, and a minus 1 as ownership range returns end+1.
-    r_end = Int64(indend / (grids.θ.N * grids.ζ.N * 2))
+    #converts the index range into grid points.
+    grid_points = matrix_to_grid(indstart, indend, grids)
 
-    #@printf("Core %d has %d to %d\n", MPI.Comm_rank(MPI.COMM_WORLD), r_start, r_end)
-
-    if MPI.Comm_rank(MPI.COMM_WORLD) == MPI.Comm_size(MPI.COMM_WORLD)-1
-        r_end = r_end-1
-    end
-
+    #initialises a struct storing temporary matrices used in the weak form.
     tm = TM()
 
-    
 
     #now we loop through the grid
-    #only relevant chunk of radial grid is considered.
-    for i in r_start:r_end
+    for rind in grid_points
 
-        r, dr = local_to_global(i, ξ, rgrid)
+        if rind == grids.r.N
+            #maybe break? should be last case?
+            continue
+        end
 
-        jac = dr/2 #following thesis!
+        #takes the local ξ array to a global r array around the grid point.
+        r, dr = local_to_global(rind, ξ, rgrid)
 
+        #jacobian of the local to global transformation.
+        jac = dr/2 
 
-        W_and_I!(W, I, met, B, prob, r, θgrid, ζgrid, tm)
-
+        #computes the contribution to the W and I matrices.
+        W_and_I!(W, I, B, met, prob, r, θgrid, ζgrid, tm)
 
         #uses the fft plan to take the fft of our two matrices.
         p * W
         p * I
-
         
         #loop over the fourier components of the trial function
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
+            #adjust the basis functions to the current coordinates/mode numbers considered.
             create_local_basis!(Φ, S, m1, n1, jac)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
@@ -118,16 +101,17 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                 for trialr in 1:4
 
-                    right_ind = grid_to_index(i, k1, l1, trialr, grids)
+                    #determines the matrix index for the trial function
+                    right_ind = grid_to_index(rind, k1, l1, trialr, grids)
 
                     for testr in 1:4
 
-                        
-                        left_ind = grid_to_index(i, k2, l2, testr, grids)
+                        #index for the test function
+                        left_ind = grid_to_index(rind, k2, l2, testr, grids)
 
                         #only check for boundaries if this is true
                         #no other i's can possibly give boundaries
-                        if i==1 || i==grids.r.N-1
+                        if rind==1 || rind==grids.r.N-1
 
 
                             if left_ind == right_ind && left_ind in boundary_inds
@@ -192,33 +176,23 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     set_values!(Wmat, rows, cols, Wdata) 
     set_values!(Imat, rows, cols, Idata) 
 
-
-    #return rows, cols, Wdata, Idata
 end
 
 
 
-#construct for qfm surfaces cases, need to change structure tbh!
 
 """
-Constructs a portion of the total matrix. Each worker is given a chunk of the radial finite elements grid based on r_start and r_end. Otherwise this function is essentially identical to MID.construct.
+    par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
 
-# Args
-- prob::ProblemT Struct containing the functions and parameters that define the problem we are solving
-- grids::GridT Grids to solve over.
-- r_start::Int64 Start of this workers chunk of the radial grid.
-- r_end::Int64 End of this workers chunk of the radial grid.
+Constructs the W and I matrices in parallel with qfm surfaces using the spectral method in ϑ, φ.
 """
-#new version that directly adds to the matrices.
-#can probably be significantly improved by making each proc add only to the bits it is storing.
 function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
 
-    #Wf and If are fkn stupid names.
+    #function copied from non qfm, so inconsistent use of r vs s.
 
 
-    #nθ, mlist, θgrid = MID.spectral_grid(grids.pmd)
-    #nζ, nlist, ζgrid = MID.spectral_grid(grids.tmd)
-
+    #instantiate the grids into arrays.
+    #note that the inputs are the new coords.
     sgrid, ϑgrid, φgrid = inst_grids(grids)
 
     #inconsistent lables but cbf tbh
@@ -264,26 +238,15 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     W = zeros(ComplexF64, 9, 9, grids.r.gp, Nθ, Nζ)
 
 
-    #this gives a warning but seems to work perfectly
-    #and incredibly efficiently!
-    #this essentially defines a plane to fft I, (and W as they are the same size), which can be exectued
-    #via p * I, this is done in place and seems to be mad efficient.
     p = plan_fft!(W, [4, 5])
 
 
+
+    #gets the indicies that this core owns
     indstart, indend = MatGetOwnershipRange(Wmat)
 
-    #TODO Move this!
-    #plus one to shift to julia indexing
-    s_start = Int64(indstart / (grids.θ.N * grids.ζ.N * 2)) + 1
-    #this has a plus 1 for indexing, and a minus 1 as ownership range returns end+1.
-    s_end = Int64(indend / (grids.θ.N * grids.ζ.N * 2))
-
-    #@printf("Core %d has %d to %d\n", MPI.Comm_rank(MPI.COMM_WORLD), s_start, s_end)
-
-    if MPI.Comm_rank(MPI.COMM_WORLD) == MPI.Comm_size(MPI.COMM_WORLD)-1
-        s_end = s_end-1
-    end
+    #converts the index range into grid points.
+    grid_points = matrix_to_grid(indstart, indend, grids)
 
     tm = WeakForm.TM()
 
@@ -292,9 +255,14 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #now we loop through the grid
     #only relevant chunk of radial grid is considered.
-    for i in s_start:s_end
+    for sind in grid_points
 
-        s, ds = local_to_global(i, ξ, sgrid)
+        if sind == grids.r.N
+            #maybe break? should be last case?
+            continue
+        end
+
+        s, ds = local_to_global(sind, ξ, sgrid)
 
         jac = ds/2 #following thesis!
 
@@ -325,16 +293,16 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                 #should be called trial s tbh!
                 for trialr in 1:4
 
-                    right_ind = grid_to_index(i, k1, l1, trialr, grids)
+                    right_ind = grid_to_index(sind, k1, l1, trialr, grids)
 
                     for testr in 1:4
 
                         
-                        left_ind = grid_to_index(i, k2, l2, testr, grids)
+                        left_ind = grid_to_index(sind, k2, l2, testr, grids)
 
                         #only check for boundaries if this is true
                         #no other i's can possibly give boundaries
-                        if i==1 || i==grids.r.N-1
+                        if sind==1 || sind==grids.r.N-1
 
 
                             if left_ind == right_ind && left_ind in boundary_inds

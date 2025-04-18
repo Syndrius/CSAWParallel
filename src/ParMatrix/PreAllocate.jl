@@ -1,8 +1,10 @@
 
 """
+    preallocate_matrix(grids::GridsT)
+
 Function that preallocates the number of non-zero elements in the petsc sparse matrices. This leads to memory efficient matrix construction. First the matrix is divided between processors by splitting the radial grid up. Then the number of non-zeros is computed per row, and this is split into the diagonal and the non-diagonal part, to conform with petsc's preallocation method.
 """
-function preallocate_matrix(grids::MID.GridsT)
+function preallocate_matrix(grids::GridsT)
 
 
     local_n = split_matrix(grids)
@@ -23,24 +25,16 @@ function preallocate_matrix(grids::MID.GridsT)
 
     indstart, indend = MatGetOwnershipRange(W)
 
-    #@printf("Proc %d has %d to %d, local_n is %d\n", MPI.Comm_rank(MPI.COMM_WORLD), indstart, indend, local_n)
-
-
-
+    #makes the final ind inclusive
     inds = indstart:indend -1
-
-    
 
     dnnz = zeros(Int32, local_n)
     onnz = zeros(Int32, local_n)
 
 
-    #probbaly going to ignore the boundaries, will be much to complicated,
-    #and for large grids should become negligible.
+    #gets the boundary inds, as these will be zero and therefore not allocated.
     boundary_inds = compute_boundary_inds(grids)
 
-    
-    
 
     #iterate through each row owned by this processor.
     for i in 1:local_n
@@ -58,7 +52,6 @@ function preallocate_matrix(grids::MID.GridsT)
         #determines the non-zero indicies for this row.
         nz_inds = compute_nz_inds(i, grids, inds, boundary_inds)
             
-        
 
         #finds the number of nz's inside the processors diagonal,
         #see https://petsc.org/release/manualpages/Mat/MatMPIAIJSetPreallocation/
@@ -67,15 +60,11 @@ function preallocate_matrix(grids::MID.GridsT)
         onnz[i] = length(nz_inds[indstart .>= nz_inds])
         onnz[i] += length(nz_inds[nz_inds .> indend])
 
-
-
-
-
     end
 
-    #allocates the memory for hte matrices.
-    #MatMPIAIJSetPreallocation(W, PetscInt(1), dnnz, PetscInt(1), onnz)
-    #MatMPIAIJSetPreallocation(I, PetscInt(1), dnnz, PetscInt(1), onnz)
+    #allocates the memory for the matrices.
+    MatMPIAIJSetPreallocation(W, PetscInt(1), dnnz, PetscInt(1), onnz)
+    MatMPIAIJSetPreallocation(I, PetscInt(1), dnnz, PetscInt(1), onnz)
 
     #finish the matrix setup.
     MatSetUp(W)
@@ -86,15 +75,17 @@ function preallocate_matrix(grids::MID.GridsT)
 end
 
 
-#split the matrix up between the cores, setup such that each split is on a grid point.
-#think we can only split on a fem grid point tbh.
-function split_matrix(grids::MID.FFFGridsT)
+"""
+    split_matrix(grids::FFFGridsT)
+
+Divides the matrix between cores.
+"""
+function split_matrix(grids::FFFGridsT)
     comm = MPI.COMM_WORLD
     rank = MPI.Comm_rank(comm) #rank of each worker
     nprocs = MPI.Comm_size(comm) #total number of workers including root.
     root = 0
     counts = zeros(Int64, nprocs)
-    #splits = zeros(Int64, nprocs+1)
 
     #here we split up the radial grid for each proc
     if rank==root
@@ -105,29 +96,28 @@ function split_matrix(grids::MID.FFFGridsT)
         for i in 1:Remainder
             counts[i] += 1
         end
-        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
-        #splits[end] = grids.r.N - 1
     end
 
-    #MPI.Bcast!(splits, root, comm)
     MPI.Bcast!(counts, root, comm)
-
-    
 
     #block size is how many points indicies per radial point.
     local_n = counts[rank+1] * 8 # * grids.θ.N * grids.ζ.N
 
     return local_n
-    #compute_block_size(grids)
 end
 
-function split_matrix(grids::MID.FFSGridsT)
+
+"""
+    split_matrix(grids::FFSGridsT)
+
+Divides the matrix between cores.
+"""
+function split_matrix(grids::FFSGridsT)
     comm = MPI.COMM_WORLD
     rank = MPI.Comm_rank(comm) #rank of each worker
     nprocs = MPI.Comm_size(comm) #total number of workers including root.
     root = 0
     counts = zeros(Int64, nprocs)
-    #splits = zeros(Int64, nprocs+1)
 
     #here we split up the radial grid for each proc
     if rank==root
@@ -138,23 +128,24 @@ function split_matrix(grids::MID.FFSGridsT)
         for i in 1:Remainder
             counts[i] += 1
         end
-        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
-        #splits[end] = grids.r.N - 1
     end
 
     #MPI.Bcast!(splits, root, comm)
     MPI.Bcast!(counts, root, comm)
 
-    
-
     #block size is how many points indicies per radial point.
     local_n = counts[rank+1] * 4 * grids.ζ.N
 
     return local_n
-    #compute_block_size(grids)
 end
 
-function split_matrix(grids::MID.FSSGridsT)
+
+"""
+    split_matrix(grids::FSSGridsT)
+
+Divides the matrix between cores.
+"""
+function split_matrix(grids::FSSGridsT)
     comm = MPI.COMM_WORLD
     rank = MPI.Comm_rank(comm) #rank of each worker
     nprocs = MPI.Comm_size(comm) #total number of workers including root.
@@ -171,20 +162,13 @@ function split_matrix(grids::MID.FSSGridsT)
         for i in 1:Remainder
             counts[i] += 1
         end
-        #splits[1:end-1] = cumsum(append!([0], counts))[1:nprocs] 
-        #splits[end] = grids.r.N - 1
     end
 
     #MPI.Bcast!(splits, root, comm)
     MPI.Bcast!(counts, root, comm)
 
-    
-
     #block size is how many points indicies per radial point.
     local_n = counts[rank+1] * 2 * grids.θ.N * grids.ζ.N
 
     return local_n
-    #compute_block_size(grids)
 end
-
-

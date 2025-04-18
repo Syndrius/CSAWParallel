@@ -1,30 +1,23 @@
 """
-    par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat)
+    par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::ShiftInvertSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
 
-Solves generalised eigenvalue problem in parallel using Slepc.
+Solves generalised eigenvalue problem in parallel using Slepc by using a shift and invert transformation to find the eigenvalus nearest to the target.
 """
 function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::ShiftInvertSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
 
 
-    #we create the eps object, auto setup uses the slepcargs above.
+    #we create the eps object, auto setup uses the slepcargs 
     eps = create_eps(W, I; auto_setup=true)
 
-    #this seems to work perfectly!
-    #we may still have to create and destroy the eps etc.
-    #note target freq should be allowed to be complex, but whatever
     EPSSetTarget(eps, solver.target)
 
     solve!(eps)
 
-
-
+    #gets the number of converged solutions
     nconv = EPSGetConverged(eps)
 
-    #vectors are used to store the eigenfunctions
-    #vecr, veci = MatCreateVecs(W)
 
-    #perhaps this should be called write to file.
-    #no post processing is actually happening.
+    #write solutions to file, post_processing is done in serial.
     par_sols_to_file(eps, dir, vecr, veci, nconv)
     
     destroy!(eps)

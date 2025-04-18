@@ -43,7 +43,7 @@ inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
 """
 Now execute the command in parallel from terminal/bash script.
 eg run from MIDParallel/
->>mpiexecjl -n 2 julia -e 'using MIDParallel; par_spectrum_from_file(dir="/Users/matt/phd/MIDParallel/data/example/")'
+>>mpiexec -n 2 julia -e 'using MIDParallel; par_spectrum_from_file(dir="/Users/matt/phd/MIDParallel/data/example/")'
 >>mpiexec -n 2 julia -e 'using MIDParallel; using MID; par_spectrum_from_file(dir="/home/149/mt3516/island_damping/MIDParallel/data/example/", target_freq=0.38)'
 
 See convergence.sh for other examples of running in parallel.

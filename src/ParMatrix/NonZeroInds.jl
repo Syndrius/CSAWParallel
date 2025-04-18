@@ -1,8 +1,9 @@
 """
+    compute_nz_inds(ind::Int64, grids::FSSGridsT, inds::Array{Int64}, boundary_inds::Array{Int64})
 
 Computes the indicies of the non-zero elements for a given row of the matrix. The non-zeros are split int `blocks` for each radial point. The blocks follow a diagonal pattern. In FSS case, each block is dense.
 """
-function compute_nz_inds(ind, grids::MID.FSSGridsT, inds, boundary_inds)
+function compute_nz_inds(ind::Int64, grids::FSSGridsT, inds::UnitRange{Int64}, boundary_inds::Array{Int64})
 
 
     #size of the largest block in the sparse matrix,
@@ -62,35 +63,22 @@ function compute_nz_inds(ind, grids::MID.FSSGridsT, inds, boundary_inds)
 
     return nz_inds
 
-
-
 end
 
 
-function compute_block_size(grids::MID.FFSGridsT)
 
-    return 4 * grids.θ.N * grids.ζ.N
-end
+"""
+    compute_nz_inds(ind::Int64, grids::FFFGridsT, inds::Array{Int64}, boundary_inds::Array{Int64})
 
-function compute_block_size(grids::MID.FSSGridsT)
-
-    return 2 * grids.θ.N * grids.ζ.N
-end
-
-function compute_block_size(grids::MID.FFFGridsT)
-
-    return 8 * grids.θ.N * grids.ζ.N
-end
-
-function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
+Computes the indicies of the non-zero elements for a given row of the matrix. The non-zeros are split int `blocks` for each radial point. The blocks follow a diagonal pattern. 
+"""
+function compute_nz_inds(ind::Int64, grids::FFSGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
 
     #each radial block is made up from Nθ rows of θ blocks.
     #this behaves v similar to FSS case, but we now have periodicity.
 
-    
-
     block_size = 4 * grids.θ.N * grids.ζ.N
-    #block_row = Int64(div(indslocal[ind], block_size, RoundDown)) + 1
+
     block_row = div(indslocal[ind], block_size) + 1
 
     sub_block_size = 4 * grids.ζ.N
@@ -99,10 +87,9 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
 
     max_block_row = grids.r.N
 
-    #sub_block_row = Int64(mod(div(indslocal[ind], sub_block_size, RoundDown), grids.θ.N)) + 1
+    
     sub_block_row = div(rem(indslocal[ind], block_size), sub_block_size) + 1
 
-    #display(Int64(mod(sub_block_row, grids.θ.N)))
 
     if sub_block_row == 1
         sub_nz_inds1 = 1:2*sub_block_size
@@ -117,11 +104,8 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
         sub_nz_inds = vcat(sub_nz_inds1, sub_nz_inds2)
 
     else
-        #nzs = 3 * sub_block_size
 
         sub_nz_inds = collect((sub_block_row-2)*sub_block_size+1:(sub_block_row+1)*sub_block_size)
-        #nzstart = (sub_block_row-2) * sub_block_size
-        #nzend = (sub_block_row+1) * sub_block_size
     end
 
 
@@ -158,19 +142,17 @@ function compute_nz_inds(ind, grids::MID.FFSGridsT, indslocal, boundary_inds)
         nz_inds = vcat(nz_inds1, nz_inds2, nz_inds3)
     end
 
-
     return nz_inds
-
-
 
 end
 
 
-#think this is good now as well.
-#there is a lot of repeated calculation in here, not sure it matters tho!
-#actually allocating fine, test case only has Nζ=2 so it over allocates.
-#fine for normal cases though!
-function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
+"""
+    compute_nz_inds(ind::Int64, grids::FFFGridsT, inds::Array{Int64}, boundary_inds::Array{Int64})
+
+Computes the indicies of the non-zero elements for a given row of the matrix. The non-zeros are split int `blocks` for each radial point. The blocks follow a diagonal pattern. 
+"""
+function compute_nz_inds(ind::Int64, grids::FFFGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
 
     #each radial block is made up from Nθ rows of θ blocks.
     #this behaves v similar to FSS case, but we now have periodicity.
@@ -191,7 +173,6 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
     ss_block_size = 8
 
     max_ss_block_row = grids.ζ.N
-
 
     max_sub_block_row = grids.θ.N #total sub blocks per row in each block
 
@@ -218,27 +199,24 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     """
     if ss_block_row == 1
-        #print("true")
         ss_nz_inds1 = 1:2*ss_block_size
         ss_nz_inds2 = (max_ss_block_row-1)*ss_block_size+1:max_ss_block_row * ss_block_size
+
         ss_nz_inds = vcat(ss_nz_inds1, ss_nz_inds2)
+
     elseif ss_block_row == max_ss_block_row
         ss_nz_inds1 = 1:ss_block_size
         ss_nz_inds2 = (max_ss_block_row-2)*ss_block_size+1:max_ss_block_row * ss_block_size
+
         ss_nz_inds = vcat(ss_nz_inds1, ss_nz_inds2)
     else
         ss_nz_inds = collect((ss_block_row-2)*ss_block_size+1:(ss_block_row+1)*ss_block_size) 
     end
 
-
-
-
     if sub_block_row == 1
         sub_nz_inds1 = ss_nz_inds
         sub_nz_inds2 = sub_block_size .+ ss_nz_inds
-
         sub_nz_inds3 = (max_sub_block_row-1)*sub_block_size .+ ss_nz_inds
-        #sub_nz_inds2 = (max_sub_block_row-1)*sub_block_size+1:max_sub_block_row * sub_block_size
 
         sub_nz_inds = vcat(sub_nz_inds1, sub_nz_inds2, sub_nz_inds3)
 
@@ -248,55 +226,28 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
         sub_nz_inds3 = (max_sub_block_row-1)*sub_block_size .+ ss_nz_inds
 
         sub_nz_inds = vcat(sub_nz_inds1, sub_nz_inds2, sub_nz_inds3)
-
     else
-        #nzs = 3 * sub_block_size
         sub_nz_inds1 = (sub_block_row-2)*sub_block_size .+ ss_nz_inds
         sub_nz_inds2 = (sub_block_row-1)*sub_block_size .+ ss_nz_inds
         sub_nz_inds3 = (sub_block_row)*sub_block_size .+ ss_nz_inds
 
         sub_nz_inds = vcat(sub_nz_inds1, sub_nz_inds2, sub_nz_inds3)
-        #nzstart = (sub_block_row-2) * sub_block_size
-        #nzend = (sub_block_row+1) * sub_block_size
     end
-
-    #=
-    if (indslocal[ind]==320)
-        display(ss_block_row)
-        display(sub_block_row)
-        display(block_row)
-        display("ss nz")
-        display(ss_nz_inds)
-        display("s nz")
-        display(sub_nz_inds)
-
-    end
-    =#
-
 
 
     if sub_block_row == 1
         sub_nz_inds1 = ss_nz_inds
         sub_nz_inds2 = sub_block_size .+ ss_nz_inds
     end
-
-
-
-    if sub_block_row == 1
-        sub_nz_inds1 = ss_nz_inds
-        sub_nz_inds2 = sub_block_size .+ ss_nz_inds
-    end
-
 
     if block_row == 1
         nz_inds1 = filter(x->  !(x in boundary_inds),  sub_nz_inds)
-        #nz_inds1 = sub_nz_inds
         nz_inds2 = block_size .+ sub_nz_inds
+
         nz_inds = vcat(nz_inds1, nz_inds2)
 
     elseif block_row == 2
         nz_inds1 = filter(x->  !(x in boundary_inds),  sub_nz_inds)
-        #nz_inds1 = sub_nz_inds
         nz_inds2 = (block_row-1)*block_size .+ sub_nz_inds
         nz_inds3 = (block_row)*block_size .+ sub_nz_inds
 
@@ -306,7 +257,6 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
         nz_inds1 = (max_block_row-2)*block_size .+ sub_nz_inds
         nz_inds2 = filter(x->  !(x in boundary_inds), (max_block_row-1)*block_size .+ sub_nz_inds)
-        #nz_inds2 = (max_block_row-1)*block_size .+ sub_nz_inds
         nz_inds = vcat(nz_inds1, nz_inds2)
     
     elseif block_row == max_block_row-1
@@ -314,9 +264,7 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
         nz_inds1 = (max_block_row-3)*block_size .+ sub_nz_inds
         nz_inds2 = (max_block_row-2)*block_size .+ sub_nz_inds
         nz_inds3 = filter(x->  !(x in boundary_inds), (max_block_row-1)*block_size .+ sub_nz_inds)
-        #nz_inds3 = (max_block_row-1)*block_size .+ sub_nz_inds
         nz_inds = vcat(nz_inds1, nz_inds2, nz_inds3)
-
     else
         nz_inds1 = (block_row-2)*block_size .+ sub_nz_inds
         nz_inds2 = (block_row-1)*block_size .+ sub_nz_inds
@@ -327,6 +275,37 @@ function compute_nz_inds(ind, grids::MID.FFFGridsT, indslocal, boundary_inds)
 
     return nz_inds
 
+end
 
 
+"""
+    compute_block_size(grids::FFSGridsT)
+
+Returns the size of each block in the matrix.
+"""
+function compute_block_size(grids::FFSGridsT)
+
+    return 4 * grids.θ.N * grids.ζ.N
+end
+
+
+"""
+    compute_block_size(grids::FSSGridsT)
+
+Returns the size of each block in the matrix.
+"""
+function compute_block_size(grids::FSSGridsT)
+
+    return 2 * grids.θ.N * grids.ζ.N
+end
+
+
+"""
+    compute_block_size(grids::FFFGridsT)
+
+Returns the size of each block in the matrix.
+"""
+function compute_block_size(grids::FFFGridsT)
+
+    return 8 * grids.θ.N * grids.ζ.N
 end
