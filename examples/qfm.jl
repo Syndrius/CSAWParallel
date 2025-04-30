@@ -39,14 +39,15 @@ plot_surfs(surfs);
 #%%
 save_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2", surfs)
 #%%
-surfs = load_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2");
+#surfs = load_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2");
+surfs = load_object("/Users/matt/phd/MID/data/surfaces/total_bench_surfs.jld2");
 #%%
-Nr = 20
-sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.8)
-#ϑgrid = init_grid(type=:as, N = 4, start = 1)
-#φgrid = init_grid(type=:as, N = 3, start = -2)
-ϑgrid = init_grid(type=:af, N = 6, pf=3)
-φgrid = init_grid(type=:af, N = 2, pf=-2)
+Nr = 80
+sgrid = init_grid(type=:rf, N=Nr, start=0.05, stop=0.95)
+ϑgrid = init_grid(type=:as, N = 4, start = 1)
+φgrid = init_grid(type=:as, N = 3, start = -2)
+#ϑgrid = init_grid(type=:af, N = 6, pf=3)
+#φgrid = init_grid(type=:af, N = 2, pf=-2)
 
 grids = init_grids(sgrid, ϑgrid, φgrid)
 #%%
@@ -78,7 +79,7 @@ evals = evals_from_file(dir=dir_base);
 continuum_plot(evals)#, ymax=40.5)
 
 
-ind = find_ind(evals, 0.30659)
+ind = find_ind(evals, 0.3179)
 
 ϕft = efunc_from_file(dir = dir_base, ind=ind);
 
