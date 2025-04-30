@@ -25,6 +25,7 @@ function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSo
 
     end
 
+    #ideally we do this each slice, but that may be causing issues.
     write_evals(evals, dir)
     return nconv
 
