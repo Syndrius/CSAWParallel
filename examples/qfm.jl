@@ -56,6 +56,7 @@ solver = init_solver(nev=100, targets=[0.2, 0.3, 0.4], prob=prob)
 #%%
 dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
+dir_base = "/scratch/y08/mt3516/test/"
 #%%
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base)
 
@@ -65,6 +66,7 @@ Now we would use the terminal to actually run the process
 This kind of already assumes the surfaces have been created
 >>mpiexec -n 2 julia -e 'using MIDParallel; qfm_spectrum_from_file(dir="/Users/matt/phd/MIDParallel/data/qfm/", qfm_surfs="/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2")'
 >>mpiexec -n 2 julia -e 'using MIDParallel; using MID; qfm_spectrum_from_file(dir="/home/149/mt3516/island_damping/MIDParallel/data/qfm/", qfm_surfs="/home/149/mt3516/island_damping/MIDParallel/data/qfm/qfm_benchmark_surfaces.jld2", target_freq=0.3, nev=200)'
+>>mpiexec -n 2 julia -e 'using MIDParallel; qfm_spectrum_from_file(dir="/scratch/y08/mt3516/test/", qfm_surfs="/scratch/y08/mt3516/qfm_data/surfaces/total_chaos_surfs.jld2")'
 """
 
 

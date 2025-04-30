@@ -34,8 +34,8 @@ solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
 #%%
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "/Users/matt/phd/MIDParallel/data/example/"
+dir_base = "/scratch/y08/mt3516/test/"
+#dir_base = "/Users/matt/phd/MIDParallel/data/example/"
 #%%
 
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
@@ -44,7 +44,7 @@ inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
 Now execute the command in parallel from terminal/bash script.
 eg run from MIDParallel/
 >>mpiexec -n 2 julia -e 'using MIDParallel; par_spectrum_from_file(dir="/Users/matt/phd/MIDParallel/data/example/")'
->>mpiexec -n 2 julia -e 'using MIDParallel; using MID; par_spectrum_from_file(dir="/home/149/mt3516/island_damping/MIDParallel/data/example/", target_freq=0.38)'
+>>mpiexec -n 2 julia -e 'using MIDParallel; par_spectrum_from_file(dir="/scratch/y08/mt3516/test/")'
 
 See convergence.sh for other examples of running in parallel.
 

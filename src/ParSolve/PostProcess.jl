@@ -44,6 +44,12 @@ Writes the solutions to file. Case for slice solve where eigenvalues are added t
 """
 function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec, nconv::Int32, evals::Array{ComplexF64})
 
+    #this will get triggered mutiple times.
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        #where the efuncs are stored before they are processed.
+        mkpath(dir*"/efuncs_raw") 
+    end
+
     for ieig in 0:nconv-1
 
 
@@ -66,8 +72,8 @@ function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
         PetscViewerDestroy(viewer)
 
     end
-    #eigenvalues are only written once they have all been found.
-    #done in sliceSolve.
+    #eigenvalues are written multiple times, so that if errors occur, some of the slices are still saved.
+    #write_evals(evals, dir)
 end
 
 """

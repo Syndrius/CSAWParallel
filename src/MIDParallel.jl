@@ -17,6 +17,7 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
  - May want to try the CISS solver again #CISS (https://slepc.upv.es/documentation/reports/str11.pdf)
  - Ideally we would have default slepcargs, but they actually can be overwritten, will be annoying af as this is done over the command line!
  - Add option for saving matrices -> then obvs need to be able to read the matrices etc.
+ - perhaps we should change slice solve to write the evals each slice, so that if it runs our of time is still saves a lot of the evals and efuncs.
 """
 
 module MIDParallel
