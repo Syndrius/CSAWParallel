@@ -11,6 +11,7 @@ using PetscWrap
 using FastGaussQuadrature
 using FFTW
 using JLD2 #perhaps the gather surfs should be somewhere else
+using Printf #temp for testing
 
 
 using MID.Structures

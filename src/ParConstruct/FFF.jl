@@ -51,6 +51,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     grid_points = matrix_to_grid(indstart, indend, grids)
 
+    rank = MPI.Comm_rank(MPI.COMM_WORLD)
+
     for (rind, θind, ζind) in grid_points
 
         if rind == grids.r.N
