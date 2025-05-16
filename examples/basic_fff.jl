@@ -11,9 +11,9 @@ Nζ=2;
 geo = init_geo(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
 
-rgrid = MID.Structures.rfem_grid(N=Nr, gp=5)
-θgrid = MID.Structures.afem_grid(N=Nθ, pf=1, gp=5);
-ζgrid = MID.Structures.afem_grid(N=Nζ, pf=-1, gp=5);
+rgrid = init_grid(type=:rf, N=Nr)
+θgrid = init_grid(type=:af, N=Nθ, pf=1)
+ζgrid = init_grid(type=:af, N=Nζ, pf=-1)
 
 grids = init_grids(rgrid, θgrid, ζgrid);
 #%%

@@ -12,23 +12,23 @@ function matrix_to_grid(indstart::Int32, indend::Int32, grids::FFFGridsT)
     
     #gets the first grid point controlled by this proc
     #+1 to convert to julia
-    rind, θind, ζind, _ = index_to_grid(indstart+1, grids)
+    x1ind, x2ind, x3ind, _ = index_to_grid(indstart+1, grids)
 
     grid_points = Array{Tuple{Int64, Int64, Int64}}(undef, npoints)
     n = 1
     #iterate through the grid points until all are acounted for.
-    #when ζ reaches its max, θ is incremented
-    #when θ reaches its max, r is incremented
+    #when x3 reaches its max, x2 is incremented
+    #when x2 reaches its max, r is incremented
     while n <= npoints
-        grid_points[n] = (rind, θind, ζind)
+        grid_points[n] = (x1ind, x2ind, x3ind)
         n += 1
-        ζind += 1
-        if ζind > grids.ζ.N
-            ζind = 1
-            θind += 1
-            if θind > grids.θ.N
-                θind = 1
-                rind += 1
+        x3ind += 1
+        if x3ind > grids.x3.N
+            x3ind = 1
+            x2ind += 1
+            if x2ind > grids.x2.N
+                x2ind = 1
+                x1ind += 1
             end
         end
     end
@@ -54,20 +54,20 @@ function matrix_to_grid(indstart::Int32, indend::Int32, grids::FFSGridsT)
     
     #gets the first grid point controlled by this proc
     #+1 to convert to julia 
-    rind, θind, _, _ = index_to_grid(indstart+1, grids)
+    x1ind, x2ind, _, _ = index_to_grid(indstart+1, grids)
 
     grid_points = Array{Tuple{Int64, Int64}}(undef, npoints)
     n = 1
-    #for this case, the grid is only divided by r, θ, all ζ values will always be on the same proc for a given r, θ
+    #for this case, the grid is only divided by r, x2, all x3 values will always be on the same proc for a given r, x2
     #iterate through the grid points until all are acounted for.
-    #when θ reaches its max, r is incremented
+    #when x2 reaches its max, r is incremented
     while n <= npoints
-        grid_points[n] = (rind, θind)
+        grid_points[n] = (x1ind, x2ind)
         n += 1
-        θind += 1
-        if θind > grids.θ.N
-            θind = 1
-            rind += 1
+        x2ind += 1
+        if x2ind > grids.x2.N
+            x2ind = 1
+            x1ind += 1
         end
     end
     return grid_points
@@ -81,12 +81,12 @@ Converts the ownership range of the matrix into grid points for the core to iter
 """
 function matrix_to_grid(indstart::Int32, indend::Int32, grids::FSSGridsT)
 
-    #for this case, the grid is only divided by r, all θ, ζ values will always be on the same proc for a given r
+    #for this case, the grid is only divided by r, all x2, x3 values will always be on the same proc for a given r
     #+1 to convert to julia 
-    rstart, _, _, _ = index_to_grid(indstart+1, grids)
+    x1start, _, _, _ = index_to_grid(indstart+1, grids)
     #+1 to change to julia, but then -1 to use julia's inclusive indexing
-    rend, _, _, _ = index_to_grid(Int64(indend), grids)
+    x1end, _, _, _ = index_to_grid(Int64(indend), grids)
 
-    return collect(rstart:rend)
+    return collect(x1start:x1end)
 end 
 

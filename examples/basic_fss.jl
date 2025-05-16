@@ -10,7 +10,7 @@ Probably want to change this to a different q-profile eventually.
 using MID 
 using MIDParallel
 using MIDViz
-#using Plots; plotlyjs()
+using Plots; plotlyjs()
 #%%
 
 #first we define the problem and write to file.
@@ -34,8 +34,8 @@ solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
 #%%
 
 #looks like full path is needed... a bit annoying tbh.
-dir_base = "/scratch/y08/mt3516/test/"
-#dir_base = "/Users/matt/phd/MIDParallel/data/example/"
+#dir_base = "/scratch/y08/mt3516/test/"
+dir_base = "/Users/matt/phd/MIDParallel/data/example/"
 #%%
 
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
@@ -60,7 +60,7 @@ evals = evals_from_file(dir=dir_base);
 continuum_plot(evals);
 
 
-ind = find_ind(evals, 0.3364)
+ind = find_ind(evals, 0.289)
 
 
 ϕft = efunc_from_file(dir=dir_base, ind=ind);

@@ -7,17 +7,15 @@ Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires 
 
  - Add Ghost cells -> maybe not worth, from petsc:  Note: It is fine to generate some entries on the “wrong” process. Often this can lead to cleaner, simpler, less buggy codes. One should never make code overly complicated in order to generate all values locally. Rather, one should organize the code in such a way that most values are generated locally.
  - Currenly there is no possibility of construct or solve... have to do both with petsc. -> this may actually be a bit important for efficiency, ideally we can save the matrices then solve different parts of the spectrum...
- - May want to try postprocess more efficiently if it takes a long time. Hopefully it is ok though.
  - Fix VecGetArray -> This did not seem to work, may have to just pretend this issue doesn't exist.
  - Ideally, somewhere we will have the minimum configure case for petsc.
- - QFM coordinats are lazy af.
- - Comments on parallel construct versions are not ideal, the functions are basically identical to MID, so have been lazy.
- - We are pretty split on using setvalue at each point or creating arrays that do it, need to pick 1!
  - Needing to post process afterwards is still not ideal, unsure this will ever be worth fixing.
  - May want to try the CISS solver again #CISS (https://slepc.upv.es/documentation/reports/str11.pdf)
  - Ideally we would have default slepcargs, but they actually can be overwritten, will be annoying af as this is done over the command line!
  - Add option for saving matrices -> then obvs need to be able to read the matrices etc.
  - perhaps we should change slice solve to write the evals each slice, so that if it runs our of time is still saves a lot of the evals and efuncs.
+ - Ideally, slice solve would check for overlapping frequencies and compare the errors, taking the efunc with lower error, this will be difficult.
+ - Maybe remove boundary indicies from grid point lists, slightly more efficient.
 """
 
 module MIDParallel

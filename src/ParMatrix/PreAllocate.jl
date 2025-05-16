@@ -89,7 +89,7 @@ function split_matrix(grids::FFFGridsT)
 
     #here we split up the radial grid for each proc
     if rank==root
-        grid_size = grids.r.N * grids.θ.N * grids.ζ.N
+        grid_size = grids.x1.N * grids.x2.N * grids.x3.N
         counts_guess = Int64(div(grid_size, nprocs, RoundDown))
         Remainder    = Int64(grid_size - counts_guess*nprocs)
         counts[:]   .= counts_guess
@@ -100,8 +100,8 @@ function split_matrix(grids::FFFGridsT)
 
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * 8 # * grids.θ.N * grids.ζ.N
+    #block size is how indicies per grid point.
+    local_n = counts[rank+1] * 8 
 
     return local_n
 end
@@ -121,7 +121,7 @@ function split_matrix(grids::FFSGridsT)
 
     #here we split up the radial grid for each proc
     if rank==root
-        grid_size = grids.r.N * grids.θ.N 
+        grid_size = grids.x1.N * grids.x2.N 
         counts_guess = Int64(div(grid_size, nprocs, RoundDown))
         Remainder    = Int64(grid_size - counts_guess*nprocs)
         counts[:]   .= counts_guess
@@ -130,11 +130,10 @@ function split_matrix(grids::FFSGridsT)
         end
     end
 
-    #MPI.Bcast!(splits, root, comm)
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * 4 * grids.ζ.N
+    #block size is how indicies per grid point.
+    local_n = counts[rank+1] * 4 * grids.x3.N
 
     return local_n
 end
@@ -151,11 +150,10 @@ function split_matrix(grids::FSSGridsT)
     nprocs = MPI.Comm_size(comm) #total number of workers including root.
     root = 0
     counts = zeros(Int64, nprocs)
-    #splits = zeros(Int64, nprocs+1)
 
     #here we split up the radial grid for each proc
     if rank==root
-        grid_size = grids.r.N 
+        grid_size = grids.x1.N 
         counts_guess = Int64(div(grid_size, nprocs, RoundDown))
         Remainder    = Int64(grid_size - counts_guess*nprocs)
         counts[:]   .= counts_guess
@@ -164,11 +162,10 @@ function split_matrix(grids::FSSGridsT)
         end
     end
 
-    #MPI.Bcast!(splits, root, comm)
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how many points indicies per radial point.
-    local_n = counts[rank+1] * 2 * grids.θ.N * grids.ζ.N
+    #block size is how indicies per grid point.
+    local_n = counts[rank+1] * 2 * grids.x2.N * grids.x3.N
 
     return local_n
 end

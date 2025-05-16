@@ -93,15 +93,15 @@ function par_post_process(dir::String)
     nevals = length(vals)
 
     ϕp, ϕpft = PostProcessing.allocate_phi_arrays(grids, deriv=false)
-    rms = Array{Float64}(undef, nevals)
+    x1ms = Array{Float64}(undef, nevals)
 
     plan = PostProcessing.create_ft_plan(ϕpft, grids)
 
-    rgrid = inst_grids(grids)[1]
+    x1grid = inst_grids(grids)[1]
 
     #arrays to store the maximum value of ϕft and the correspondning r value.
-    rmarray = Array{Int64}(undef, grids.θ.N, grids.ζ.N)
-    ϕmarray = Array{Float64}(undef, grids.θ.N, grids.ζ.N)
+    rmarray = Array{Int64}(undef, grids.x2.N, grids.x3.N)
+    ϕmarray = Array{Float64}(undef, grids.x2.N, grids.x3.N)
 
     
     ω = Array{ComplexF64}(undef, nevals)
@@ -121,12 +121,12 @@ function par_post_process(dir::String)
 
         PostProcessing.reconstruct_phi!(efunc, grids, ϕp, ϕpft, plan)
         
-        rind, mode_lab = PostProcessing.label_mode(ϕpft, grids, rmarray, ϕmarray)
+        x1ind, mode_lab = PostProcessing.label_mode(ϕpft, grids, rmarray, ϕmarray)
 
 
         push!(mode_labs, mode_lab)
 
-        rms[i] = rgrid[rind]
+        x1ms[i] = x1grid[x1ind]
 
         #normalise the eigenvalues
         ω[i] = prob.geo.R0 * sqrt(vals[i])
@@ -135,7 +135,7 @@ function par_post_process(dir::String)
         save_object(dir * "/efuncs_ft/"*efunc_write, ϕpft)
         
     end
-    evals = EvalsT(ω, rms, mode_labs)
+    evals = EvalsT(ω, x1ms, mode_labs)
 
     save_object(dir*"/evals.jld2", evals)
 end

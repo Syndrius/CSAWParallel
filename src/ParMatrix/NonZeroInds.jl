@@ -14,7 +14,7 @@ function compute_nz_inds(ind::Int64, grids::FSSGridsT, inds::UnitRange{Int64}, b
     block_row = div(inds[ind], block_size) + 1
 
     #total number of blocks, which is the numebr of radial grids.
-    max_block_row = grids.r.N
+    max_block_row = grids.x1.N
 
     #for fss case, each block is dense and fully occupied.
     #this is kept here to maintain consistency with other cases.
@@ -74,18 +74,18 @@ Computes the indicies of the non-zero elements for a given row of the matrix. Th
 """
 function compute_nz_inds(ind::Int64, grids::FFSGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
 
-    #each radial block is made up from Nθ rows of θ blocks.
+    #each radial block is made up from Nx2 rows of x2 blocks.
     #this behaves v similar to FSS case, but we now have periodicity.
 
-    block_size = 4 * grids.θ.N * grids.ζ.N
+    block_size = 4 * grids.x2.N * grids.x3.N
 
     block_row = div(indslocal[ind], block_size) + 1
 
-    sub_block_size = 4 * grids.ζ.N
+    sub_block_size = 4 * grids.x3.N
 
-    max_sub_block_row = grids.θ.N #total sub blocks per row in each block
+    max_sub_block_row = grids.x2.N #total sub blocks per row in each block
 
-    max_block_row = grids.r.N
+    max_block_row = grids.x1.N
 
     
     sub_block_row = div(rem(indslocal[ind], block_size), sub_block_size) + 1
@@ -154,7 +154,7 @@ Computes the indicies of the non-zero elements for a given row of the matrix. Th
 """
 function compute_nz_inds(ind::Int64, grids::FFFGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
 
-    #each radial block is made up from Nθ rows of θ blocks.
+    #each radial block is made up from Nx2 rows of x2 blocks.
     #this behaves v similar to FSS case, but we now have periodicity.
 
     
@@ -165,18 +165,18 @@ function compute_nz_inds(ind::Int64, grids::FFFGridsT, indslocal::UnitRange{Int6
 
 
     #within each block there are smaller subblocks,
-    #each corresponding to a single θ point.
-    sub_block_size = 8 * grids.ζ.N
+    #each corresponding to a single x2 point.
+    sub_block_size = 8 * grids.x3.N
 
     #sub_sub_block, which is always size 8.
-    #finally within the sub blocks there are 8^2 sub-sub-blocks, each corresponding to a single ζ point.
+    #finally within the sub blocks there are 8^2 sub-sub-blocks, each corresponding to a single x3 point.
     ss_block_size = 8
 
-    max_ss_block_row = grids.ζ.N
+    max_ss_block_row = grids.x3.N
 
-    max_sub_block_row = grids.θ.N #total sub blocks per row in each block
+    max_sub_block_row = grids.x2.N #total sub blocks per row in each block
 
-    max_block_row = grids.r.N
+    max_block_row = grids.x1.N
 
 
     sub_block_row = div(rem(indslocal[ind], block_size), sub_block_size) + 1
@@ -193,7 +193,7 @@ function compute_nz_inds(ind::Int64, grids::FFFGridsT, indslocal::UnitRange{Int6
     For the two smallest blocks, we have to consider periodicity, meaning for row 1 and row N,
     there will be two blocks at the start (end) and a single block at the end (start).
 
-    For the largest block, for r, we don't need periodicity, so at row 1 and N there will just be two blocks at the start (end). However for this case we need to eliminate the boundary conditions, 
+    For the largest block, for x1, we don't need periodicity, so at row 1 and N there will just be two blocks at the start (end). However for this case we need to eliminate the boundary conditions, 
     which is what filter does. Note this is only applied to the appropriate blocks for speed.
     These must be applied at row 1, 2, N, N-1.
 
@@ -285,7 +285,7 @@ Returns the size of each block in the matrix.
 """
 function compute_block_size(grids::FFSGridsT)
 
-    return 4 * grids.θ.N * grids.ζ.N
+    return 4 * grids.x2.N * grids.x3.N
 end
 
 
@@ -296,7 +296,7 @@ Returns the size of each block in the matrix.
 """
 function compute_block_size(grids::FSSGridsT)
 
-    return 2 * grids.θ.N * grids.ζ.N
+    return 2 * grids.x2.N * grids.x3.N
 end
 
 
@@ -307,5 +307,5 @@ Returns the size of each block in the matrix.
 """
 function compute_block_size(grids::FFFGridsT)
 
-    return 8 * grids.θ.N * grids.ζ.N
+    return 8 * grids.x2.N * grids.x3.N
 end

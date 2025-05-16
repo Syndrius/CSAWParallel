@@ -7,7 +7,7 @@ using MID
 using MIDParallel
 using MIDViz
 using JLD2
-#using Plots; plotlyjs()
+using Plots; plotlyjs()
 #%%
 #generating qfm surfaces in parallel requires they are combined later.
 #this assumes qfm_surfaces.jl has been run with 2 procs.
@@ -16,38 +16,44 @@ using JLD2
 #%%
 R0=4.0
 
-#amp needs further thought!
-#define the non-resonant island
-k = 0.0006
-isl = init_island(m0=3, n0=-2, A=k/3)
-isl2 = init_island(m0=4, n0=-3, A=k/4)
+k = 0.005
+isl = init_island(m0=3, n0=2, A=k)
 
 geo = init_geo(R0=R0)
 
-#to solve non-Hermitian
-#flr = MID.Structures.FLRT(δ = 1e-18)
-prob = init_problem(q=qfm_q, geo=geo, isl=isl, isl2=isl2)#, flr=flr)
+prob = init_problem(q=fu_dam_q, geo=geo, isl=isl)
+
+#qlist, plist = farey_tree(3, 2, 1, 3, 1)
+rationals = lowest_rationals(6, prob.q(0.0)[1], prob.q(1.0)[1])
+
+guess_list = surface_guess(rationals, prob.q)
 #%%
-#instead just generate them in serial.
-#we may want surfs to file or something so that we don't explicitly need jld2 as an import.
-qlist, plist = farey_tree(4, 1, 1, 2, 1)
-guess_list = 0.5 .* ones(length(qlist))
-@time surfs = construct_surfaces(plist, qlist, guess_list, prob);
+surfs = construct_surfaces(rationals, guess_list, prob);
 
 plot_surfs(surfs);
-
+#%%
 #%%
 save_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2", surfs)
 #%%
 #surfs = load_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2");
-surfs = load_object("/Users/matt/phd/MID/data/surfaces/total_bench_surfs.jld2");
+#surfs = load_object("/Users/matt/phd/MID/data/surfaces/total_bench_surfs.jld2");
 #%%
-Nr = 80
-sgrid = init_grid(type=:rf, N=Nr, start=0.05, stop=0.95)
-ϑgrid = init_grid(type=:as, N = 4, start = 1)
-φgrid = init_grid(type=:as, N = 3, start = -2)
-#ϑgrid = init_grid(type=:af, N = 6, pf=3)
-#φgrid = init_grid(type=:af, N = 2, pf=-2)
+Nr = 30
+sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
+ϑgrid = init_grid(type=:as, N = 2, start = 1)
+φgrid = init_grid(type=:as, N = 1, start = -1)
+grids = init_grids(sgrid, ϑgrid, φgrid)
+#%%
+Nr = 20
+sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
+ϑgrid = init_grid(type=:af, N = 4, pf=1)
+φgrid = init_grid(type=:as, N = 1, start = -1)
+grids = init_grids(sgrid, ϑgrid, φgrid)
+#%%
+Nr = 20
+sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
+ϑgrid = init_grid(type=:af, N = 3, pf=1)
+φgrid = init_grid(type=:af, N = 1, pf=-1)
 
 grids = init_grids(sgrid, ϑgrid, φgrid)
 #%%
@@ -56,7 +62,7 @@ solver = init_solver(nev=100, targets=[0.2, 0.3, 0.4], prob=prob)
 #%%
 dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
-dir_base = "/scratch/y08/mt3516/test/"
+#dir_base = "/scratch/y08/mt3516/test/"
 #%%
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base)
 
@@ -80,8 +86,9 @@ evals = evals_from_file(dir=dir_base);
 
 continuum_plot(evals)#, ymax=40.5)
 
-
-ind = find_ind(evals, 0.3179)
+ind = find_ind(evals, 0.278)
+ind = find_ind(evals, 0.281)
+ind = find_ind(evals, 0.2818)
 
 ϕft = efunc_from_file(dir = dir_base, ind=ind);
 

@@ -11,9 +11,9 @@ Nθ=6;
 #rgrid = collect(LinRange(0, 1, N));
 geo = init_geo(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
-rgrid = MID.Structures.rfem_grid(N=Nr);
-θgrid = MID.Structures.afem_grid(N=Nθ, pf=1);
-ζgrid = MID.Structures.asm_grid(start=-1, N = 1);
+rgrid = init_grid(type=:rf, N=Nr)
+θgrid = init_grid(type=:af, N=Nθ, pf=1)
+ζgrid = init_grid(type=:as, N=1, start=-1)
 grids = init_grids(rgrid, θgrid, ζgrid);
 #%%
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
@@ -44,7 +44,7 @@ evals = evals_from_file(dir=dir_base);
 continuum_plot(evals);
 
 
-ind = find_ind(evals, 0.3364)
+ind = find_ind(evals, 0.300)
 
 
 ϕft = efunc_from_file(dir=dir_base, ind=ind);
