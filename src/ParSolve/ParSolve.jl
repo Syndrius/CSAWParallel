@@ -61,8 +61,24 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     MPI.Init()
 
     #ideally this should be in the other solver types, even if it is unused in serial, it may be important in slepc.
+    #TODO
+    #fix the solver to already have this info
+    #add option for the diagonal shift
+    #that seems to fix the solid vertical lines problem
+    #but is a bit arbitrary
+    #choosing too large changes the spectrum
+    #too small and nothing happens.
+    #also as a command line arg it doesn't want 1e-6, that gets read as 1.
+    #which may cause problemos for putting in a float tbh.
+    #the shift doesn't seem to do anything when it is actually run in parallel
+    #yip fkn ee
+    #guess we will ignore for now.
+    #MUMPS is a bit better, but we are still facing issues
+    #we probably need to shift the zero_pivot tolerance if possible!
     if prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
         #sets the solver to hermitian, unsure if it actually matters.
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
+        #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -mat_superlu_dist_replacetinypivot -st_pc_factor_shift_type positive_definite", solver.nev) #* evals_str #* efuncs_str 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
@@ -96,6 +112,19 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
         @printf("Construction of %dx%d matrices complete.\n", mat_size, mat_size)
     end
 
+    #=
+    viewerW = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/Users/matt/phd/W.dat")
+    viewerI = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/Users/matt/phd/I.dat")
+
+    #this doesn't even write the complex part... wot the fek
+    MatView(W, viewerW)
+    MatView(I, viewerI)
+
+    PetscViewerDestroy(viewerW)
+    PetscViewerDestroy(viewerI)
+    =#
+    
+
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         display("Solving...")
     end
@@ -105,6 +134,7 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     vecr, veci = MatCreateVecs(W)
 
     nconv = par_solve(W, I, solver, dir, vecr, veci)
+    #nconv = 0
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         @printf("Solving complete, %d eigenvalues found.\n", nconv)

@@ -19,7 +19,7 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #%%
 #tae_freq = 0.396 #/ geo.R0)^2; #previously found tae_freq.
 
-solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
+solver = init_solver(nev=200, targets=[0.0, 0.5], prob=prob)
 #%%
 #looks like full path is needed... a bit annoying tbh.
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
@@ -47,7 +47,7 @@ par_post_process(dir_base) #unfort have we have to do this!
 evals = evals_from_file(dir=dir_base);
 
 
-continuum_plot(evals, n=-1);
+continuum_plot(evals)#, n=-1);
 
 
 ind = find_ind(evals, 0.30)

@@ -91,12 +91,20 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                     if left_ind == right_ind && left_ind in boundary_inds
 
-                        #diagonals for boundary conditions are set to 1.
+                            #diagonals for boundary conditions are set to 1.
                         push!(rows, left_ind)
                         push!(cols, right_ind)
-                        push!(Wdata, 1.0+0.0im)
-                        push!(Idata, 1.0+0.0im)
-                        
+                        push!(Wdata, 0.5+0.0im)
+                        push!(Idata, 0.5+0.0im)
+                            
+                            #=
+                            push!(rows, left_ind)
+                            push!(cols, right_ind)
+                            push!(Wdata, 0.0+0.0im)
+                            push!(Idata, 0.0+0.0im)
+                            =#
+                            
+                            
 
                     #otherwise the boundaries are set to zero, which for sparse matrices
                     #is the same as leaving blank.
@@ -117,7 +125,16 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                         push!(Idata, Isum)
                     end
                 else
+
                     
+                    #=
+                    if left_ind == right_ind 
+                        push!(rows, left_ind)
+                        push!(cols, right_ind)
+                        push!(Wdata, 0.0+0.0im)
+                        push!(Idata, 0.0+0.0im)
+                    end
+                    =#
                     #integrate the local contribution to our matrices.
                     Wsum = @views gauss_integrate(Ψ[testx1, testx2, testx3, :, :, :, :], Φ[trialx1, trialx2, trialx3, :, :, :, :], W, wgx1, wgx2, wgx3, jac, grids.x1.gp, grids.x2.gp, grids.x3.gp)
 
