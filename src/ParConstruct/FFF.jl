@@ -212,7 +212,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #initialises a struct storing temporary matrices used in the weak form.
     tm = TM()
     #initialise strict for storing the Coordinate transformation between (r, θ, ζ) and (s, ϑ, φ)
-    CT = CoordTsfmT()
+    CT = CoordTransformT()
 
     #gets the grid points corresponding to the indicies owned by the proc
     #these are the grid points this proc will compute
