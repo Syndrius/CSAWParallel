@@ -167,6 +167,9 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     end
+    #hermitian may just not be true for qfm (or at all!). Perhaps this was causing some problemos?
+    #this is at least effecting the inner product error a bit, unsure if it will fix it fully tbh
+    slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
 
     #this also inits petsc
     SlepcInitialize(slepcargs)
