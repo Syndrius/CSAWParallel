@@ -235,6 +235,9 @@ function par_spectrum_from_file(; dir::String)
     #should only root be doing this?
     prob, grids, solver = inputs_from_file(dir=dir)
 
+    #fkn awful solution
+    #think we need a separate inst_problem function we can call
+    #removed, not going to work!
     par_compute_spectrum(prob=prob, grids=grids, solver=solver, dir=dir)
 
 end
