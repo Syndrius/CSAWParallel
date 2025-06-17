@@ -20,14 +20,15 @@ geo = init_geo(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
 #%%
 
-Nr=100;
+Nr=4;
 rgrid = init_grid(type=:rf, N=Nr)
 θgrid = init_grid(type=:as, start=1, N = 2)
 ζgrid = init_grid(type=:as, start=-1, N = 1)
 grids = init_grids(rgrid, θgrid, ζgrid);
 #%%
 
-solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
+#solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
+solver = init_solver(nev=3, target=0.33, prob=prob)
 #solver = init_solver(nev=100, target=0.3, prob=prob)
 
 

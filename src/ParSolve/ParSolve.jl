@@ -79,7 +79,8 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
         #sets the solver to hermitian, unsure if it actually matters.
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -mat_superlu_dist_replacetinypivot -st_pc_factor_shift_type positive_definite", solver.nev) #* evals_str #* efuncs_str 
-        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
+        #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -mat_type mpisbaij", solver.nev) #* evals_str #* efuncs_str 
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev) #* evals_str #* efuncs_str 
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     end
@@ -100,12 +101,15 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     end
     
     par_construct(W, I, prob, grids)
+
     
     MatAssemblyBegin(W, MAT_FINAL_ASSEMBLY)
     MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY)
     MatAssemblyEnd(W, MAT_FINAL_ASSEMBLY)
     MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY)
 
+    display(MatIsHermitian(I))
+    display(MatIsHermitian(W))
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         mat_size = matrix_size(grids)
@@ -150,6 +154,27 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
 
 end
 
+function MatIsHermitian(mat::PetscMat)
+
+    #so fss is 
+    tol = 1e-15 #so similar to other case, Hermitian approximatly, at least for fss.
+    #bigger issue may arise when we have a huge number of cores,
+    #or when there are large island / or qfm etc
+    result = Ref{PetscWrap.PetscBool}(PetscWrap.PETSC_FALSE)
+
+    #this just seems to not work properly, not ideal
+    #this is a completly useless check
+    #either doesn't work
+    #or if we explicity set the matrix to hermitian it just returns true, even if matrix is very non hermitian.
+    #error = ccall((:MatIsHermitian, PetscWrap.libpetsc), PetscErrorCode, (Ptr{Cvoid}, PetscReal, Ref{PetscWrap.PetscBool}), mat, tol, result)
+    #error = ccall((:MatIsSymmetric, PetscWrap.libpetsc), PetscErrorCode, (Ptr{Cvoid}, PetscReal, Ref{PetscWrap.PetscBool}), mat, tol, result)
+
+    #lets try actually getting the transpose and seeing the difference.
+    @assert iszero(error)
+
+    return result[]
+end
+
 
 """
     qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, dir::String, surfs::Array{QFMSurfaceT})
@@ -169,7 +194,8 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     end
     #hermitian may just not be true for qfm (or at all!). Perhaps this was causing some problemos?
     #this is at least effecting the inner product error a bit, unsure if it will fix it fully tbh
-    slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
+    #should always be hermitian, at least to tolerance, need to understand why not.
+    #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
 
     #this also inits petsc
     SlepcInitialize(slepcargs)

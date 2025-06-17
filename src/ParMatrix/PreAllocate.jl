@@ -23,6 +23,12 @@ function preallocate_matrix(grids::GridsT)
     MatSetFromOptions(W)
     MatSetFromOptions(I)
 
+    #not actually sure this is going to do anything usefull.
+    #seems like it is just a shorthand for chekcing if Hermitian
+    #doubt this actually forces anything.
+    PetscWrap.MatSetOption(W, PetscWrap.MAT_HERMITIAN, true)
+    PetscWrap.MatSetOption(I, PetscWrap.MAT_HERMITIAN, true)
+
     indstart, indend = MatGetOwnershipRange(W)
 
     #makes the final ind inclusive
