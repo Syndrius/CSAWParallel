@@ -5,9 +5,9 @@ using MID
 using MIDParallel
 
 #%%
-rgrid = init_grid(type=:rf, N = 30, gp=4)
+rgrid = init_grid(type=:rf, N = 3, gp=4)
 θgrid = init_grid(type=:af, N = 3, gp=4, pf=0)
-ζgrid = init_grid(type=:af, N = 2, gp=4, pf=0)
+ζgrid = init_grid(type=:af, N = 3, gp=4, pf=0)
 #θgrid = init_grid(type=:as, N = 2, start=1)
 #ζgrid = init_grid(type=:as, N = 1, start=-1)
 
