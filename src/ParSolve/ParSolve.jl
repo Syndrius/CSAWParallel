@@ -166,7 +166,7 @@ function MatIsHermitian(mat::PetscMat)
     #this is a completly useless check
     #either doesn't work
     #or if we explicity set the matrix to hermitian it just returns true, even if matrix is very non hermitian.
-    #error = ccall((:MatIsHermitian, PetscWrap.libpetsc), PetscErrorCode, (Ptr{Cvoid}, PetscReal, Ref{PetscWrap.PetscBool}), mat, tol, result)
+    error = ccall((:MatIsHermitian, PetscWrap.libpetsc), PetscErrorCode, (Ptr{Cvoid}, PetscReal, Ref{PetscWrap.PetscBool}), mat, tol, result)
     #error = ccall((:MatIsSymmetric, PetscWrap.libpetsc), PetscErrorCode, (Ptr{Cvoid}, PetscReal, Ref{PetscWrap.PetscBool}), mat, tol, result)
 
     #lets try actually getting the transpose and seeing the difference.
@@ -189,6 +189,7 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     if prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
         #sets the solver to hermitian, unsure if it actually matters.
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
+        #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     end
