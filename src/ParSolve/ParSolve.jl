@@ -80,7 +80,7 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -mat_superlu_dist_replacetinypivot -st_pc_factor_shift_type positive_definite", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -mat_type mpisbaij", solver.nev) #* evals_str #* efuncs_str 
-        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev) #* evals_str #* efuncs_str 
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
     end
@@ -108,8 +108,8 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     MatAssemblyEnd(W, MAT_FINAL_ASSEMBLY)
     MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY)
 
-    display(MatIsHermitian(I))
-    display(MatIsHermitian(W))
+    #display(MatIsHermitian(I))
+    #display(MatIsHermitian(W))
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         mat_size = matrix_size(grids)
