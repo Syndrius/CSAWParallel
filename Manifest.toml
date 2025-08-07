@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.0"
+julia_version = "1.11.5"
 manifest_format = "2.0"
 project_hash = "673583e587bd63ee63fb6cfaf45d2b8efa9fdf4e"
 
@@ -401,6 +401,11 @@ weakdeps = ["StaticArrays"]
     [deps.ForwardDiff.extensions]
     ForwardDiffStaticArraysExt = "StaticArrays"
 
+[[deps.FunctionWrappers]]
+git-tree-sha1 = "d62485945ce5ae9c0c48f124a84998d755bae00e"
+uuid = "069b7b12-0de2-55c6-9aab-29f3d0a68a2e"
+version = "1.1.3"
+
 [[deps.Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
@@ -530,7 +535,7 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 version = "1.11.0"
 
 [[deps.MID]]
-deps = ["Arpack", "BSplineKit", "EllipsisNotation", "Elliptic", "FFTW", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "NLsolve", "Printf", "Roots", "SparseArrays"]
+deps = ["Arpack", "BSplineKit", "EllipsisNotation", "Elliptic", "FFTW", "FastGaussQuadrature", "FunctionWrappers", "JLD2", "LaTeXStrings", "LinearAlgebra", "NLsolve", "Printf", "Roots", "SparseArrays"]
 path = "../MID"
 uuid = "864cfd1d-2a39-4b19-8808-16c25e50ed02"
 version = "1.0.0-DEV"
@@ -619,7 +624,7 @@ version = "0.3.27+1"
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
-version = "0.8.1+2"
+version = "0.8.5+0"
 
 [[deps.OpenMPI_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Hwloc_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML", "Zlib_jll"]

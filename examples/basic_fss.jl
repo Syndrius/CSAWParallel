@@ -20,7 +20,7 @@ geo = init_geo(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
 #%%
 
-Nr=4;
+Nr=20;
 rgrid = init_grid(type=:rf, N=Nr)
 θgrid = init_grid(type=:as, start=1, N = 2)
 ζgrid = init_grid(type=:as, start=-1, N = 1)
