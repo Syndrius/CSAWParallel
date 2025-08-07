@@ -4,12 +4,12 @@ function fff_convergence_inputs(Nfs, mtarg, ntarg, zrtarg, dir)
     geo = init_geo(R0=1.0)
     prob = MID.Helmholtz.TestProblemT(flr=flr, geo=geo)
     an_ev, code = anal_evals(mtarg, ntarg, zrtarg)
-    solver = init_solver(nev=30, targets=sqrt.(an_ev), prob=prob)
+    solver = init_solver(nev=10, targets=sqrt.(an_ev), prob=prob)
 
     for i in 1:length(Nfs)
-        xgrid = init_grid(type=:rf, N = Nfs[i])#, gp=3)
-        ygrid = init_grid(type=:af, N=Nfs[i])
-        zgrid = init_grid(type=:af, N=Nfs[i])
+        xgrid = init_grid(type=:rf, N = Nfs[i])#, sep1=0.45, sep2=0.55, frac=0.4)
+        ygrid = init_grid(type=:af, N=Nfs[i]+1)
+        zgrid = init_grid(type=:af, N=Nfs[i]-1)
         
 
         grids = init_grids(xgrid, ygrid, zgrid)
@@ -41,11 +41,12 @@ function fff_convergence(Nfs, mtarg, ntarg, zrtarg, dir_base)
 
     for i in 1:length(Nfs)
         dir = dir_base * "/fff" * string(i) * "/"
-        xgrid = init_grid(type=:rf, N = Nfs[i])#, gp=3)
-        ygrid = init_grid(type=:af, N=Nfs[i])
-        zgrid = init_grid(type=:af, N=Nfs[i])
+        #xgrid = init_grid(type=:rf, N = Nfs[i])#, gp=3)
+        #ygrid = init_grid(type=:af, N=Nfs[i])
+        #zgrid = init_grid(type=:af, N=Nfs[i])
         
-        grids = init_grids(xgrid, ygrid, zgrid)
+        #grids = init_grids(xgrid, ygrid, zgrid)
+        _, grids, _  = inputs_from_file(dir=dir)
         evals = evals_from_file(dir=dir)
 
         eval_true = []
@@ -73,11 +74,14 @@ function fff_convergence(Nfs, mtarg, ntarg, zrtarg, dir_base)
             end
         end
         #display("or here")
+        display(sort(an_ev))
+        display(sort(real.(evals.ω[eval_true]) .^2))
         eval_diff[i, :] = abs.(sort(real.(evals.ω[eval_true])) .^2 .- sort(an_ev))
 
-        xgp = MID.inst_grid(xgrid)
-        ygp = MID.inst_grid(ygrid)
-        zgp = MID.inst_grid(zgrid)
+        #xgp = MID.inst_grid(xgrid)
+        #ygp = MID.inst_grid(ygrid)
+        #zgp = MID.inst_grid(zgrid)
+        xgp, ygp, zgp = MID.inst_grids(grids)
         for k in 1:length(eval_true), j in 1:Nint, l in 1:Nint, p in 1:Nint
             #will only work if m,n are positive incrementing from 1.
             #now m, n will be extra cooked.
@@ -85,7 +89,9 @@ function fff_convergence(Nfs, mtarg, ntarg, zrtarg, dir_base)
             #no longer actually needed as we need to interpolate in 2d.
             #mtrue = mode_to_ind(mn_true[k][1], ygrid)
             #mn_true for the last bit doesn't make any sense!
-            ϕ = efunc_from_file(dir=dir, ind=eval_true[k], ft=false)
+            #Feels like this should be complex???
+            #guess if there is no pf? -> could signify a problemo
+            ϕ = efunc_from_file(dir=dir, ind=eval_true[k], ft=false) 
             intphi[k, j, l, p] = MID.Mapping.hermite_interpolation(int_grid[j], int_grid[l], int_grid[p], ϕ, xgp, ygp, zgp)
         end
 

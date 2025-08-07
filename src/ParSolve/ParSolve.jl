@@ -116,9 +116,11 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
         @printf("Construction of %dx%d matrices complete.\n", mat_size, mat_size)
     end
 
+    
     #=
-    viewerW = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/Users/matt/phd/W.dat")
-    viewerI = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/Users/matt/phd/I.dat")
+    viewerW = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/scratch/y08/mt3516/Helmholtz/test/W.dat")
+    viewerI = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/scratch/y08/mt3516/Helmholtz/test/I.dat")
+    #viewerI = PetscViewerASCIIOpen(MPI.COMM_WORLD, "/Users/matt/phd/I.dat")
 
     #this doesn't even write the complex part... wot the fek
     MatView(W, viewerW)
@@ -127,6 +129,7 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     PetscViewerDestroy(viewerW)
     PetscViewerDestroy(viewerI)
     =#
+    
     
 
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0

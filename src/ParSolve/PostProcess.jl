@@ -92,7 +92,9 @@ function par_post_process(dir::String)
     vals = load_object(dir*"vals_raw.jld2")
     nevals = length(vals)
 
-    ϕp, ϕpft = PostProcessing.allocate_phi_arrays(grids, deriv=false)
+    #TODO
+    #ned option for deriv!
+    ϕp, ϕpft = PostProcessing.allocate_phi_arrays(grids, deriv=true)
     x1ms = Array{Float64}(undef, nevals)
 
     plan = PostProcessing.create_ft_plan(ϕpft, grids)

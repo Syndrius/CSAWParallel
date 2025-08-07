@@ -94,8 +94,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                             #diagonals for boundary conditions are set to 1.
                         push!(rows, left_ind)
                         push!(cols, right_ind)
-                        push!(Wdata, 0.5+0.0im)
-                        push!(Idata, 0.5+0.0im)
+                        push!(Wdata, 1.0+0.0im)
+                        push!(Idata, 1.0+0.0im)
                             
                             #=
                             push!(rows, left_ind)
