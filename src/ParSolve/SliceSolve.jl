@@ -8,7 +8,9 @@ function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSo
     nconv = 0
 
     evals = ComplexF64[]
+    errs = Float64[]
 
+    tol = 0.0
     for target in solver.targets
         eps = create_eps(W, I; auto_setup=true)
 
@@ -18,15 +20,17 @@ function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSo
 
         local_conv = EPSGetConverged(eps)
 
-        par_sols_to_file(eps, dir, vecr, veci, local_conv, evals)
+        par_sols_to_file(eps, dir, vecr, veci, local_conv, evals, errs)
 
         nconv += local_conv
+        tol, maxits = EPSGetTolerances(eps)
         destroy!(eps)
-
     end
 
     #ideally we do this each slice, but that may be causing issues.
     write_evals(evals, dir)
+    push!(errs, tol)
+    write_errs(errs, dir)
     return nconv
 
 end

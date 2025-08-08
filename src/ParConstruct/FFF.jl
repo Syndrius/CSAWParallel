@@ -20,6 +20,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξx1, ξx2, ξx3)
 
+    ts = ones(size(S.H))
+
     #creates the trial and test function arrays.
     #these store the basis functions for each derivative
     #and finite elements basis 
@@ -68,10 +70,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         W_and_I!(W, I, B, met, prob, x1, x2, x3, tm)
 
         #adjust the basis functions to the current coordinates/mode numbers considered.
-        create_local_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3)
+        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3, ts)
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        create_local_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3)
+        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3, ts)
 
         #loop over the Hermite elements for the trial function
         for trialx1 in 1:4, trialx2 in 1:4, trialx3 in 1:4
@@ -236,10 +238,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, x1, x2, x3, tm, surf_itp, CT, sd)
 
         #adjust the basis functions to the current coordinates/mode numbers considered.
-        create_local_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3)
+        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3)
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        create_local_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3)
+        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3)
 
         #loop over the Hermite elements for the trial function
         for trialx1 in 1:4, trialx2 in 1:4, trialx3 in 1:4

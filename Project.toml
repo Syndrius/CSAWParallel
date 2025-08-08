@@ -8,6 +8,7 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MID = "864cfd1d-2a39-4b19-8808-16c25e50ed02"
 MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 PetscWrap = "5be22e1c-01b5-4697-96eb-ef9ccdc854b8"
@@ -16,6 +17,7 @@ SlepcWrap = "c3679e3b-785e-4ccc-b734-b7685cbb935e"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
+LinearAlgebra = "1.11.0"
 julia = "1.10.3"
 
 [extras]

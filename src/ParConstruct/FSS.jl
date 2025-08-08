@@ -27,10 +27,13 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξ)
 
-    #the trial function
-    Φ = zeros(ComplexF64, 4, 9, grids.x1.gp)
-    #the test function.
-    Ψ = zeros(ComplexF64, 4, 9, grids.x1.gp)   
+    ts = ones(size(S.H))
+
+    #creates the trial and test function arrays.
+    #these store the basis functions for each derivative
+    #and finite elements basis 
+    Φ = init_basis_function(grids)
+    Ψ = init_basis_function(grids)
 
     #arrays to store the row, column and data of each matrix element
     rows = Array{Int64}(undef, 0) #ints
@@ -84,12 +87,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
             #adjust the basis functions to the current coordinates/mode numbers considered.
-            create_local_basis!(Φ, S, m1, n1, jac)
+            create_global_basis!(Φ, S, m1, n1, jac, ts)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate
-                create_local_basis!(Ψ, S, -m2, -n2, jac)
+                create_global_basis!(Ψ, S, -m2, -n2, jac, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nx2, Nx2) + 1
@@ -202,10 +205,14 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξ)
 
-    #the trial function
-    Φ = zeros(ComplexF64, 4, 9, grids.x1.gp)
-    #the test function.
-    Ψ = zeros(ComplexF64, 4, 9, grids.x1.gp)   
+    #
+    ts = ones(size(S.H))
+
+    #creates the trial and test function arrays.
+    #these store the basis functions for each derivative
+    #and finite elements basis 
+    Φ = init_basis_function(grids)
+    Ψ = init_basis_function(grids)
 
     #arrays to store the row, column and data of each matrix element
     rows = Array{Int64}(undef, 0) #ints
@@ -261,12 +268,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
             #adjust the basis functions to the current coordinates/mode numbers considered.
-            create_local_basis!(Φ, S, m1, n1, jac)
+            create_global_basis!(Φ, S, m1, n1, jac, ts)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate
-                create_local_basis!(Ψ, S, -m2, -n2, jac)
+                create_global_basis!(Ψ, S, -m2, -n2, jac, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nx2, Nx2) + 1

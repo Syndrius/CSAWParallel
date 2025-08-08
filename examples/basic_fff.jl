@@ -47,7 +47,7 @@ par_post_process(dir_base) #unfort have we have to do this!
 evals = evals_from_file(dir=dir_base);
 
 
-continuum_plot(evals)#, n=-1);
+continuum_plot(evals, n=-1);
 
 
 ind = find_ind(evals, 0.30)

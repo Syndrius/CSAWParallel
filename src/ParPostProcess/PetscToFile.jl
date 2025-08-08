@@ -1,3 +1,4 @@
+
 """
     par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec, nconv::Int32)
 
@@ -54,6 +55,7 @@ function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
 
     write_evals(evals, dir)
     push!(errs, tol) #just so we have the tolerance used.
+    #display(errs)
     write_errs(errs, dir)
 
 end
@@ -63,7 +65,7 @@ end
 
 Writes the solutions to file. Case for slice solve where eigenvalues are added to an array after each solve.
 """
-function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec, nconv::Int32, evals::Array{ComplexF64})
+function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec, nconv::Int32, evals::Array{ComplexF64}, errs::Array{Float64})
 
     #this will get triggered mutiple times.
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
@@ -80,6 +82,9 @@ function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
         #should be able to pass null in somehow
         eval, _, vecr, veci = EPSGetEigenpair(eps, ieig, vecr, veci)
 
+        err = EPSComputeError(eps, ieig)
+
+        push!(errs, err)
 
         push!(evals, eval)
 
@@ -99,69 +104,6 @@ function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
 end
 
 
-"""
-    par_post_process(dir::String)
-
-Post processes the parallel solutions that have been written to file.
-This is done outisde the main functions as there is a bug when converting petsc vec's to julia arrays.
-This function is done with a single processor either way.
-"""
-function par_post_process(dir::String, deriv=false)
-    mkpath(dir*"/efuncs")
-    mkpath(dir*"/efuncs_ft")
-
-    prob, grids, _ = inputs_from_file(dir=dir)
-
-    vals = load_object(dir*"vals_raw.jld2")
-    nevals = length(vals)
-
-    ϕp, ϕpft = PostProcessing.allocate_phi_arrays(grids, deriv=deriv)
-    x1ms = Array{Float64}(undef, nevals)
-
-    plan = PostProcessing.create_ft_plan(ϕpft, grids)
-
-    x1grid = inst_grids(grids)[1]
-
-    #arrays to store the maximum value of ϕft and the correspondning r value.
-    rmarray = Array{Int64}(undef, grids.x2.N, grids.x3.N)
-    ϕmarray = Array{Float64}(undef, grids.x2.N, grids.x3.N)
-
-    
-    ω = Array{ComplexF64}(undef, nevals)
-    mode_labs = Tuple{Int, Int}[] 
-
-    for i in 1:nevals
-
-
-        efunc_read = @sprintf("efunc%05d.hdf5", i)
-        efunc_write = @sprintf("efunc%05d.jld2", i)
-
-        #unfort doesn't handle complex numbers v well
-        efunc_split = load_object(dir*"/efuncs_raw/"*efunc_read)
-
-        efunc = efunc_split[1, :] .+ efunc_split[2, :] * 1im
-
-
-        PostProcessing.reconstruct_phi!(efunc, grids, ϕp, ϕpft, plan)
-        
-        x1ind, mode_lab = PostProcessing.label_mode(ϕpft, grids, rmarray, ϕmarray)
-
-
-        push!(mode_labs, mode_lab)
-
-        x1ms[i] = x1grid[x1ind]
-
-        #normalise the eigenvalues
-        ω[i] = prob.geo.R0 * sqrt(vals[i])
-
-        save_object(dir * "/efuncs/"*efunc_write, ϕp)
-        save_object(dir * "/efuncs_ft/"*efunc_write, ϕpft)
-        
-    end
-    evals = EvalsT(ω, x1ms, mode_labs)
-
-    save_object(dir*"/evals.jld2", evals)
-end
 
 
 
@@ -183,19 +125,7 @@ function write_errs(errs::Array{Float64}, dir::String)
 end
 
 
-function new_solution(eps::SlepcWrap.SlepcEPS, eval::ComplexF64, err::Float64, evals::Array{ComplexF64}, errs::Array{Float64}, tol::Float64)
-
-    for i in 1:length(evals)
-        if abs(eval - evals[i]) < tol * abs(eval)
-            #eigenvalue looks to be the same, check the eigenfunction.
-
-            #if equal_eigenfunctions(
-        end
-    end
-end
-
-
-
+#this might need to be moved!
 function EPSComputeError(eps::SlepcWrap.SlepcEPS, ind::Int64)
     rel_err = Ref{PetscReal}(0)
 
@@ -206,4 +136,5 @@ function EPSComputeError(eps::SlepcWrap.SlepcEPS, ind::Int64)
 
     return rel_err[]
 end
+
 

@@ -24,7 +24,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #Gets the Hermite basis for the radial grid and poloidal grid.
     S = hermite_basis(ξx1, ξx2)
-    S = hermite_basis(ξx1, ξx2)
+
+    ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
     #these store the basis functions for each derivative
@@ -88,12 +89,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for x1, seems pointless.
-            create_local_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2)
+            create_global_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2, ts)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                create_local_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2)
+                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 nind = mod(l1-l2 + Nx3, Nx3) + 1
@@ -204,7 +205,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
     #Gets the Hermite basis for the radial grid and poloidal grid.
     S = hermite_basis(ξx1, ξx2)
-    S = hermite_basis(ξx1, ξx2)
+
+    ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
     #these store the basis functions for each derivative
@@ -270,12 +272,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for x1, seems pointless.
-            create_local_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2)
+            create_global_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2, ts)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                create_local_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2)
+                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 nind = mod(l1-l2 + Nx3, Nx3) + 1
