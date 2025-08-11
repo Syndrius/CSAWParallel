@@ -28,14 +28,14 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #%%
 
 #solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
-solver = init_solver(nev=3, target=0.33, prob=prob)
-#solver = init_solver(nev=100, target=0.3, prob=prob)
+#solver = init_solver(nev=3, target=0.33, prob=prob)
+solver = init_solver(nev=10, targets=[0.2, 0.3], prob=prob)
 
 
 #%%
 
 #looks like full path is needed... a bit annoying tbh.
-#dir_base = "/scratch/y08/mt3516/test/"
+dir_base = "/scratch/y08/mt3516/test/"
 dir_base = "/Users/matt/phd/MIDParallel/data/example/"
 #%%
 

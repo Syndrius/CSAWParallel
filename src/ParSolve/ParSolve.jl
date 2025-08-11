@@ -78,15 +78,16 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     #we probably need to shift the zero_pivot tolerance if possible!
     if prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
         #sets the solver to hermitian, unsure if it actually matters.
-        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
+        #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -mat_superlu_dist_replacetinypivot -st_pc_factor_shift_type positive_definite", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -mat_type mpisbaij", solver.nev) #* evals_str #* efuncs_str 
         #writing the same command twice just overwrites the first
         #I think that works perf for us
         #as we can just have a few of the default ones.
         #but then they can be overwritten externally.
-        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -eps_view -eps_error_relative ::ascii_info_detail -eps_nev 1", solver.nev) #* evals_str #* efuncs_str 
-        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev)
+        #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -eps_view -eps_error_relative ::ascii_info_detail -eps_nev 1", solver.nev) #* evals_str #* efuncs_str 
+        #default to superlu_dist as that seems to be better for our cases, however this can be overwritten with command line args
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist", solver.nev)
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_non_hermitian", solver.nev)
