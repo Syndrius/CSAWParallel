@@ -10,7 +10,7 @@ Probably want to change this to a different q-profile eventually.
 using MID 
 using MIDParallel
 using MIDViz
-using Plots; plotlyjs()
+#using Plots; plotlyjs()
 #%%
 
 #first we define the problem and write to file.
@@ -30,6 +30,7 @@ grids = init_grids(rgrid, θgrid, ζgrid);
 #solver = init_solver(nev=100, targets=[0.0, 0.33, 0.8], prob=prob)
 #solver = init_solver(nev=3, target=0.33, prob=prob)
 solver = init_solver(nev=10, targets=[0.2, 0.3], prob=prob)
+solver = init_solver(left=0.2, right=0.3, prob=prob)
 
 
 #%%

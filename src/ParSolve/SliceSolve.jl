@@ -27,10 +27,12 @@ function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSo
         destroy!(eps)
     end
 
-    #ideally we do this each slice, but that may be causing issues.
-    write_evals(evals, dir)
-    push!(errs, tol)
-    write_errs(errs, dir)
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        write_evals(evals, dir)
+        push!(errs, tol) #just so we have the tolerance used.
+        write_errs(errs, dir)
+    end
+
     return nconv
 
 end

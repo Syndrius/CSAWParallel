@@ -53,10 +53,11 @@ function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.
 
     end
 
-    write_evals(evals, dir)
-    push!(errs, tol) #just so we have the tolerance used.
-    #display(errs)
-    write_errs(errs, dir)
+    if MPI.Comm_rank(MPI.COMM_WORLD) == 0
+        write_evals(evals, dir)
+        push!(errs, tol) #just so we have the tolerance used.
+        write_errs(errs, dir)
+    end
 
 end
 

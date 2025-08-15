@@ -43,6 +43,8 @@ include("ShiftInvertSolve.jl")
 
 include("SliceSolve.jl")
 
+include("IntervalSolve.jl")
+
 export par_solve
 
 
@@ -76,7 +78,21 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     #guess we will ignore for now.
     #MUMPS is a bit better, but we are still facing issues
     #we probably need to shift the zero_pivot tolerance if possible!
-    if prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
+
+    #looks like serious memory problems are created with st_pc_type lu.
+    #perhaps it defaults to this for low memory cases and defaults to an iterative solver otherwise?
+    #looks like we should be doing cholesky factorisation instead of lu, it should be the same but for Hermitian matrices, making it more efficeint.
+    #may also want to look at spectrum slicing more seriously. -> this will require a new solver type!
+    #think we need to do some testing on a smallish case.
+
+    #SLEPCARGS of interest
+    #-eps_true_residual -> compute the residual of the original problem not the shift inverted problem, may be moreaccurate.
+    #-eps_mpd may help with memory scale with large number of processes, it looks like there is always a serial step, this restricts the size of that step, which may increase number of iterations but reduce memory
+    #-eps_harmonic may be an alterantive to the shift and invert transformation for finding interior evals.
+    if solver isa IntervalSolverT
+        #this just doesn't work on Gadi, gives seg fault, unsure why, probably not worth trying to fix.
+        slepcargs = @sprintf("-eps_interval %f,%f -eps_gen_hermitian -st_type sinvert -st_ksp_type preonly -st_pc_type cholesky st_pc_factor_mat_solver_type superlu_dist -st_mat_superlu_dist_rowperm NOROWPERM", solver.left, solver.right)
+    elseif prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
         #sets the solver to hermitian, unsure if it actually matters.
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -st_pc_factor_shift_type nonzero -st_pc_factor_shift_amount 0.00001", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist -mat_superlu_dist_replacetinypivot -st_pc_factor_shift_type positive_definite", solver.nev) #* evals_str #* efuncs_str 
@@ -87,10 +103,16 @@ function par_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
         #but then they can be overwritten externally.
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -eps_view -eps_error_relative ::ascii_info_detail -eps_nev 1", solver.nev) #* evals_str #* efuncs_str 
         #default to superlu_dist as that seems to be better for our cases, however this can be overwritten with command line args
+        #superlu seems to be extremely more demanding on memory! unsure why, we will stick to default
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist", solver.nev)
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev)
+        #slepcargs = @sprintf("-eps_nev %d -eps_gen_hermitian", solver.nev)
+        #slepcargs = ""
     else
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_non_hermitian", solver.nev)
+        #default to superlu_dist as that seems to be better for our cases, however this can be overwritten with command line args
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_non_hermitian -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist", solver.nev)
     end
 
     #display(ARGS)
@@ -205,14 +227,21 @@ function qfm_compute_spectrum(; prob::ProblemT, grids::GridsT, solver::SolverT, 
     MPI.Init()
     
     #ideally this should be in the other solver types, even if it is unused in serial, it may be important in slepc.
-    if prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
+    if solver isa IntervalSolverT
+        slepcargs = @sprintf("-eps_interval %f,%f -eps_gen_hermitian -st_type sinvert -st_ksp_type preonly -st_pc_type cholesky st_pc_factor_mat_solver_type superlu_dist -st_mat_superlu_dist_rowperm NOROWPERM", solver.left, solver.right)
+    elseif prob.flr.δ == 0.0 && prob.flr.ρ_i == 0 && prob.flr.δ_e == 0
         #sets the solver to hermitian, unsure if it actually matters.
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view -eps_gen_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev)
+        #default to superlu_dist as that seems to be better for our cases, however this can be overwritten with command line args
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist", solver.nev)
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_hermitian", solver.nev)
     else
         #slepcargs = @sprintf("-eps_nev %d -st_type sinvert -memory_view -mat_view ::ascii_info -eps_gen_non_hermitian -eps_view", solver.nev) #* evals_str #* efuncs_str 
         slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_non_hermitian", solver.nev)
+        #default to superlu_dist as that seems to be better for our cases, however this can be overwritten with command line args
+        slepcargs = @sprintf("-eps_nev %d -st_type sinvert -eps_gen_non_hermitian -st_pc_type lu -st_pc_factor_mat_solver_type superlu_dist", solver.nev)
     end
 
     #cool, this works, args are not picked up when we run julia -e ' ' arg1 etc though!

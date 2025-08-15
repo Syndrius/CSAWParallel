@@ -16,12 +16,12 @@ using Plots; plotlyjs()
 #%%
 R0=4.0
 
-k = 0.005
-isl = init_island(m0=3, n0=2, A=k)
+k = 0.0005
+isl = init_island(m0=3, n0=-2, A=k/3)
 
 geo = init_geo(R0=R0)
 
-prob = init_problem(q=fu_dam_q, geo=geo, isl=isl)
+prob = init_problem(q=cantori_q, geo=geo, isl=isl,type=:flux)
 
 #qlist, plist = farey_tree(3, 2, 1, 3, 1)
 rationals = lowest_rationals(6, prob.q(0.0)[1], prob.q(1.0)[1])
@@ -62,7 +62,7 @@ solver = init_solver(nev=100, targets=[0.2, 0.3, 0.4], prob=prob)
 #%%
 dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
-#dir_base = "/scratch/y08/mt3516/test/"
+dir_base = "/scratch/y08/mt3516/test/"
 #%%
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base)
 
