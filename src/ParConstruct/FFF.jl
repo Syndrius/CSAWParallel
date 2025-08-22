@@ -20,6 +20,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξx1, ξx2, ξx3)
 
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -61,19 +62,19 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ arrays to a global arrays around the grid point.
-        x1, x2, x3, dx1, dx2, dx3 = local_to_global(x1ind, x2ind, x3ind, ξx1, ξx2, ξx3, x1grid, x2grid, x3grid) 
+        x1, x2, x3, Δx1, Δx2, Δx3 = local_to_global(x1ind, x2ind, x3ind, ξx1, ξx2, ξx3, x1grid, x2grid, x3grid) 
 
         #jacobian of the local to global transformation.
-        jac = dx1 * dx2 * dx3 / 8 #following thesis!
+        jac = Δx1 * Δx2 * Δx3 / 8 #following thesis!
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, B, met, prob, x1, x2, x3, tm)
 
         #adjust the basis functions to the current coordinates/mode numbers considered.
-        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3, ts)
+        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, Δx1, Δx2, Δx3, ts)
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3, ts)
+        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, Δx1, Δx2, Δx3, ts)
 
         #loop over the Hermite elements for the trial function
         for trialx1 in 1:4, trialx2 in 1:4, trialx3 in 1:4
@@ -93,21 +94,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                     if left_ind == right_ind && left_ind in boundary_inds
 
-                            #diagonals for boundary conditions are set to 1.
+                        #diagonals for boundary conditions are set to 1.
                         push!(rows, left_ind)
                         push!(cols, right_ind)
                         push!(Wdata, 0.5+0.0im)
                         push!(Idata, 0.5+0.0im)
                             
-                            #=
-                            push!(rows, left_ind)
-                            push!(cols, right_ind)
-                            push!(Wdata, 0.0+0.0im)
-                            push!(Idata, 0.0+0.0im)
-                            =#
-                            
-                            
-
                     #otherwise the boundaries are set to zero, which for sparse matrices
                     #is the same as leaving blank.
                     elseif left_ind in boundary_inds
@@ -128,15 +120,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                     end
                 else
 
-                    
-                    #=
-                    if left_ind == right_ind 
-                        push!(rows, left_ind)
-                        push!(cols, right_ind)
-                        push!(Wdata, 0.0+0.0im)
-                        push!(Idata, 0.0+0.0im)
-                    end
-                    =#
                     #integrate the local contribution to our matrices.
                     Wsum = @views gauss_integrate(Ψ[testx1, testx2, testx3, :, :, :, :], Φ[trialx1, trialx2, trialx3, :, :, :, :], W, wgx1, wgx2, wgx3, jac, grids.x1.gp, grids.x2.gp, grids.x3.gp)
 
@@ -188,6 +171,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξx1, ξx2, ξx3)
 
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -231,19 +215,19 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ arrays to a global arrays around the grid point.
-        x1, x2, x3, dx1, dx2, dx3 = local_to_global(x1ind, x2ind, x3ind, ξx1, ξx2, ξx3, x1grid, x2grid, x3grid) 
+        x1, x2, x3, Δx1, Δx2, Δx3 = local_to_global(x1ind, x2ind, x3ind, ξx1, ξx2, ξx3, x1grid, x2grid, x3grid) 
 
         #jacobian of the local to global transformation.
-        jac = dx1 * dx2 * dx3 / 8 #following thesis!
+        jac = Δx1 * Δx2 * Δx3 / 8 #following thesis!
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, x1, x2, x3, tm, surf_itp, CT, sd)
 
         #adjust the basis functions to the current coordinates/mode numbers considered.
-        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, dx1, dx2, dx3, ts)
+        create_global_basis!(Φ, S, grids.x2.pf, grids.x3.pf, Δx1, Δx2, Δx3, ts)
 
         #negatives for conjugate, will assume the phase factor is conjugate as well.
-        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, dx1, dx2, dx3, ts)
+        create_global_basis!(Ψ, S, -grids.x2.pf, -grids.x3.pf, Δx1, Δx2, Δx3, ts)
 
         #loop over the Hermite elements for the trial function
         for trialx1 in 1:4, trialx2 in 1:4, trialx3 in 1:4
@@ -269,7 +253,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                         push!(Wdata, 1.0+0.0im)
                         push!(Idata, 1.0+0.0im)
                         
-
                     #otherwise the boundaries are set to zero, which for sparse matrices
                     #is the same as leaving blank.
                     elseif left_ind in boundary_inds

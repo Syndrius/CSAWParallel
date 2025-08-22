@@ -44,9 +44,6 @@ Converts the ownership range of the matrix into grid points for the core to iter
 """
 function matrix_to_grid(indstart::Int32, indend::Int32, grids::FFSGridsT)
 
-    #TODO 
-    #this has been changed to match fff case, has not been verified yet!
-
     #note int32 is due to petsc.
 
     #total number of gridpoints controlled by this proc

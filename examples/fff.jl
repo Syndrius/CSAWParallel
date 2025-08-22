@@ -8,7 +8,7 @@ Nr=10;
 Nθ=5;
 Nζ=3;
 #rgrid = collect(LinRange(0, 1, N));
-geo = init_geo(R0=10.0);
+geo = init_geo(R0=4.0);
 prob = init_problem(q=fu_dam_q, geo=geo); 
 
 isl = init_island(m0=2, n0=-1, w=0.03, r0=0.5, qp=2.0)
@@ -27,12 +27,9 @@ solver = init_solver(nev=50, target=0.3, prob=prob)
 #%%
 #looks like full path is needed... a bit annoying tbh.
 #dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/example/"
-dir_base = "/scratch/y08/mt3516/test/"
-#dir_base = "/Users/matt/phd/MIDParallel/data/example/"
+#dir_base = "/scratch/y08/mt3516/test/"
+dir_base = "/Users/matt/phd/MIDParallel/data/example/"
 #%%
-#dir_base = "/scratch/y08/mt3516/fff/fu_dam/300x20x8/"
-
-
 
 inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
 #%%
@@ -59,4 +56,4 @@ ind = find_ind(evals, 0.30)
 
 
 ϕft = efunc_from_file(dir=dir_base, ind=ind);
-potential_plot(ϕft, grids);
+harmonic_plot(ϕft, grids);

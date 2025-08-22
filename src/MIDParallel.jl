@@ -1,42 +1,34 @@
 """
-
-Parallel extension to MID. Matrices are constructed in parallel with MPI. Radial grid is split into nproc segments speeding up the construction.
-
+Parallel extension to MID. Matrices are constructed in parallel with MPI. Grid is split into nproc segments speeding up the construction.
 Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires that Petsc, Slepc and MPI are all installed externally to julia.
-
-
- - Add Ghost cells -> maybe not worth, from petsc:  Note: It is fine to generate some entries on the “wrong” process. Often this can lead to cleaner, simpler, less buggy codes. One should never make code overly complicated in order to generate all values locally. Rather, one should organize the code in such a way that most values are generated locally.
- - Currenly there is no possibility of construct or solve... have to do both with petsc. -> this may actually be a bit important for efficiency, ideally we can save the matrices then solve different parts of the spectrum...
- - Fix VecGetArray -> This did not seem to work, may have to just pretend this issue doesn't exist. -> this means we must post process after each run.
- - Ideally, somewhere we will have the minimum configure case for petsc.
- - Add option for saving matrices -> then obvs need to be able to read the matrices etc.
- - perhaps we should change slice solve to write the evals each slice, so that if it runs our of time is still saves a lot of the evals and efuncs.
- - Maybe remove boundary indicies from grid point lists, slightly more efficient.
 """
-
 module MIDParallel
 
 
-include("ParMatrix/ParMatrix.jl") #this is in a good state
+"""
+#TODO
+- Add option to save matrices to file, and independently construct or solve matrices.
+- Fix the convertion of c petsc arrays to julia.
+"""
+
+
+include("ParMatrix/ParMatrix.jl")
 
 
 
-include("ParConstruct/ParConstruct.jl") #this is becoming ok, however, needs soem clean up, mainly just comments etc.
-
+include("ParConstruct/ParConstruct.jl") 
 
 using ..ParConstruct; export par_construct_surfaces
 using ..ParConstruct; export gather_surfs
 
 
-
-#needs to be fixed!
 include("ParPostProcess/ParPostProcess.jl")
 
 using ..ParPostProcess; export par_post_process
 
 
 
-include("ParSolve/ParSolve.jl") #now in a decent state.
+include("ParSolve/ParSolve.jl") 
 
 using ..ParSolve; export par_compute_spectrum
 using ..ParSolve; export qfm_spectrum_from_file

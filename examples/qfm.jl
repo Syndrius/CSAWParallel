@@ -1,6 +1,8 @@
 #this example with the chaos system seems to be working ok.
 #actual example of qfm case.
 #note that this assumes the surfaces have already been generated, example can be found in qfm_surfaces.jl
+#TODO
+#example of this is worthwhile to see how the surfaces are passed around.
 
 
 using MID

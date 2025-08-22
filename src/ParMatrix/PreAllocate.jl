@@ -23,9 +23,7 @@ function preallocate_matrix(grids::GridsT)
     MatSetFromOptions(W)
     MatSetFromOptions(I)
 
-    #not actually sure this is going to do anything usefull.
-    #seems like it is just a shorthand for chekcing if Hermitian
-    #doubt this actually forces anything.
+    #needs to be moved for flr effects.
     PetscWrap.MatSetOption(W, PetscWrap.MAT_HERMITIAN, true)
     PetscWrap.MatSetOption(I, PetscWrap.MAT_HERMITIAN, true)
 
@@ -37,10 +35,8 @@ function preallocate_matrix(grids::GridsT)
     dnnz = zeros(Int32, local_n)
     onnz = zeros(Int32, local_n)
 
-
     #gets the boundary inds, as these will be zero and therefore not allocated.
     boundary_inds = compute_boundary_inds(grids)
-
 
     #iterate through each row owned by this processor.
     for i in 1:local_n
@@ -57,7 +53,6 @@ function preallocate_matrix(grids::GridsT)
         
         #determines the non-zero indicies for this row.
         nz_inds = compute_nz_inds(i, grids, inds, boundary_inds)
-            
 
         #finds the number of nz's inside the processors diagonal,
         #see https://petsc.org/release/manualpages/Mat/MatMPIAIJSetPreallocation/
@@ -75,7 +70,6 @@ function preallocate_matrix(grids::GridsT)
     #finish the matrix setup.
     MatSetUp(W)
     MatSetUp(I)
-
 
     return W, I
 end

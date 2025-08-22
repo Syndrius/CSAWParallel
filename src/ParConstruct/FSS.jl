@@ -27,6 +27,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξ)
 
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -49,10 +50,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     I = local_matrix_size(grids)
     W = local_matrix_size(grids)
 
-
     #plan for the fft
     p = plan_fft!(W, [4, 5])
-
 
     #gets the indicies that this core owns
     indstart, indend = MatGetOwnershipRange(Wmat)
@@ -71,10 +70,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ array to a global r array around the grid point.
-        x1, dx1 = local_to_global(x1ind, ξ, x1grid)
+        x1, Δx1 = local_to_global(x1ind, ξ, x1grid)
 
         #jacobian of the local to global transformation.
-        jac = dx1/2 
+        jac = Δx1 / 2 
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, B, met, prob, x1, x2grid, x3grid, tm)
@@ -205,7 +204,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #gets the basis 
     S = hermite_basis(ξ)
 
-    #
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -252,10 +251,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ array to a global r array around the grid point.
-        x1, dx1 = local_to_global(x1ind, ξ, x1grid)
+        x1, Δx1 = local_to_global(x1ind, ξ, x1grid)
 
         #jacobian of the local to global transformation.
-        jac = dx1/2 
+        jac = Δx1 / 2 
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, x1, x2grid, x3grid, tm, surf_itp, CT, sd)

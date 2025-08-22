@@ -25,6 +25,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #Gets the Hermite basis for the radial grid and poloidal grid.
     S = hermite_basis(ξx1, ξx2)
 
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -40,7 +41,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     cols = Array{Int64}(undef, 0) 
     Idata = Array{ComplexF64}(undef, 0)
     Wdata = Array{ComplexF64}(undef, 0)
-
 
     #determines the indicies in the matrices corresponding to the dirichlet boundary conditions for x1.
     boundary_inds = compute_boundary_inds(grids)
@@ -72,10 +72,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ arrays to a global arrays around the grid point.
-        x1, x2, dx1, dx2 = local_to_global(x1ind, x2ind, ξx1, ξx2, x1grid, x2grid) 
+        x1, x2, Δx1, Δx2 = local_to_global(x1ind, x2ind, ξx1, ξx2, x1grid, x2grid) 
 
         #jacobian of the local to global transformation.
-        jac = dx1 * dx2 / 4 
+        jac = Δx1 * Δx2 / 4 
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, B, met, prob, x1, x2, x3grid, tm)
@@ -83,18 +83,17 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         #uses the fft plan to take the fft of our two matrices.
         p * W
         p * I
-
         
         #loop over the fourier components of the trial function
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for x1, seems pointless.
-            create_global_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2, ts)
+            create_global_basis!(Φ, S, grids.x2.pf, n1, Δx1, Δx2, ts)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2, ts)
+                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, Δx1, Δx2, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 nind = mod(l1-l2 + Nx3, Nx3) + 1
@@ -206,6 +205,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     #Gets the Hermite basis for the radial grid and poloidal grid.
     S = hermite_basis(ξx1, ξx2)
 
+    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
     ts = ones(size(S.H))
 
     #creates the trial and test function arrays.
@@ -214,14 +214,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     Φ = init_basis_function(grids)
     Ψ = init_basis_function(grids)
 
-
     #arrays to store the row, column and data of each matrix element
     #used for constructing sparse matrices.
     rows = Array{Int64}(undef, 0) 
     cols = Array{Int64}(undef, 0) 
     Idata = Array{ComplexF64}(undef, 0)
     Wdata = Array{ComplexF64}(undef, 0)
-
 
     #determines the indicies in the matrices corresponding to the dirichlet boundary conditions for x1.
     boundary_inds = compute_boundary_inds(grids)
@@ -255,10 +253,10 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ arrays to a global arrays around the grid point.
-        x1, x2, dx1, dx2 = local_to_global(x1ind, x2ind, ξx1, ξx2, x1grid, x2grid) 
+        x1, x2, Δx1, Δx2 = local_to_global(x1ind, x2ind, ξx1, ξx2, x1grid, x2grid) 
 
         #jacobian of the local to global transformation.
-        jac = dx1 * dx2 / 4 
+        jac = Δx1 * Δx2 / 4 
 
         #computes the contribution to the W and I matrices.
         W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met,  prob, x1, x2, x3grid, tm, surf_itp, CT, sd)
@@ -272,12 +270,12 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         for (l1, n1) in enumerate(nlist)
 
             #note we haven't implemented pf for x1, seems pointless.
-            create_global_basis!(Φ, S, grids.x2.pf, n1, dx1, dx2, ts)
+            create_global_basis!(Φ, S, grids.x2.pf, n1, Δx1, Δx2, ts)
 
             for (l2, n2) in enumerate(nlist)
 
                 #negatives for conjugate, will assume the phase factor is conjugate as well.
-                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, dx1, dx2, ts)
+                create_global_basis!(Ψ, S, -grids.x2.pf, -n2, Δx1, Δx2, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 nind = mod(l1-l2 + Nx3, Nx3) + 1
@@ -296,7 +294,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
 
                         #only check for boundaries if this is true
                         #no other i's can possibly give boundaries
-                        
                         if x1ind==1 || x1ind==grids.x1.N-1
 
 
@@ -308,7 +305,6 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 push!(Wdata, 1.0 + 0.0im)
                                 push!(Idata, 1.0 + 0.0im)
                                 
-                            
                             #otherwise the boundaries are set to zero, which for sparse matrices
                             #is the same as leaving blank.
                             elseif left_ind in boundary_inds

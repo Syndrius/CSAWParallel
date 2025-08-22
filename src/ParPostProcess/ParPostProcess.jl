@@ -1,7 +1,7 @@
-
-#directly converting petsc vectors to julia arrays is bugged
-#so post processing is done by first writing the petsc solution to hdf5 files
-#then later these are read in and processed in the same way as the serial case.
+"""
+Module for post processing the solutions found in parallel.
+Notably there is a bug converting the Petsc Vec's into Julia arrays meaning this must be done after each run, reading the results from file.
+"""
 module ParPostProcess
 
 using Printf
