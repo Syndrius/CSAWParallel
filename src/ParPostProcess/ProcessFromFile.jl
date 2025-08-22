@@ -118,6 +118,7 @@ function par_post_process(dir::String, deriv=false)
     evals = EvalsT(ω, x1ms, mode_labs)
 
     save_object(dir*"/evals.jld2", evals)
+    save_object(dir*"/unique_inds.jld2", un_inds)
 end
 
 #compares two eigenvalue to see if they are approximatly equal.
