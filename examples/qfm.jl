@@ -1,97 +1,85 @@
 #this example with the chaos system seems to be working ok.
-#actual example of qfm case.
-#note that this assumes the surfaces have already been generated, example can be found in qfm_surfaces.jl
-#TODO
-#example of this is worthwhile to see how the surfaces are passed around.
-
-
 using MID
 using MIDParallel
-using MIDViz
-using JLD2
-using Plots; plotlyjs()
+using Plots
 #%%
-#generating qfm surfaces in parallel requires they are combined later.
-#this assumes qfm_surfaces.jl has been run with 2 procs.
-#gather_surfs("/Users/matt/phd/MIDParallel/data/qfm/", 2)
-#gather_surfs("/home/149/mt3516/island_damping/MIDParallel/data/qfm/", 2)
-#%%
-R0=4.0
+geo = init_geometry(:tor, R0=4.0)
 
-k = 0.0005
-isl = init_island(m0=3, n0=-2, A=k/3)
+#probably cant just use w huh.
+#this would require the root solve shite.
+isl = init_island(m0=3, n0=1, A=0.1)
 
-geo = init_geo(R0=R0)
+fields = init_fields(:ψ, q=cantori_q, isl=isl)
 
-prob = init_problem(q=cantori_q, geo=geo, isl=isl,type=:flux)
+prob = init_problem(geometry=geo, fields=fields)
 
-#qlist, plist = farey_tree(3, 2, 1, 3, 1)
-rationals = lowest_rationals(6, prob.q(0.0)[1], prob.q(1.0)[1])
-
-guess_list = surface_guess(rationals, prob.q)
-#%%
-surfs = construct_surfaces(rationals, guess_list, prob);
-
-plot_surfs(surfs);
-#%%
-#%%
-save_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2", surfs)
-#%%
-#surfs = load_object("/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2");
-#surfs = load_object("/Users/matt/phd/MID/data/surfaces/total_bench_surfs.jld2");
-#%%
-Nr = 30
-sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
-ϑgrid = init_grid(type=:as, N = 2, start = 1)
-φgrid = init_grid(type=:as, N = 1, start = -1)
-grids = init_grids(sgrid, ϑgrid, φgrid)
-#%%
-Nr = 20
-sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
-ϑgrid = init_grid(type=:af, N = 4, pf=1)
-φgrid = init_grid(type=:as, N = 1, start = -1)
-grids = init_grids(sgrid, ϑgrid, φgrid)
-#%%
-Nr = 20
-sgrid = init_grid(type=:rf, N=Nr, start=0.4, stop=0.9)
-ϑgrid = init_grid(type=:af, N = 3, pf=1)
-φgrid = init_grid(type=:af, N = 1, pf=-1)
-
-grids = init_grids(sgrid, ϑgrid, φgrid)
 #%%
 
-solver = init_solver(nev=100, targets=[0.2, 0.3, 0.4], prob=prob)
-#%%
-dir_base = "/Users/matt/phd/MIDParallel/data/qfm/"
-#dir_base = "/home/149/mt3516/island_damping/MIDParallel/data/qfm/"
-dir_base = "/scratch/y08/mt3516/test/"
-#%%
-inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base)
+sgrid = init_grid(:s, 30, start=0.15, stop=0.9)
+ϑgrid = init_grid(:ϑ, 6, pf=1)
+ζgrid = init_grid(:ζ, 1, pf=-1)
+#sgrid = init_grid(:s, 100, start=0.15, stop=0.9)
+#ϑgrid = init_grid(:sm, 2, start=1)
+#ζgrid = init_grid(:sm, 1, start=-1)
+#sgrid = init_grid(:s, 40, start=0.15, stop=0.9)
+#ϑgrid = init_grid(:ϑ, 10, pf=1)
+#ζgrid = init_grid(:sm, 1, start=-1)
 
-#note the use of surfaces here is currently not very clear!!
-"""
-Now we would use the terminal to actually run the process
-This kind of already assumes the surfaces have been created
->>mpiexec -n 2 julia -e 'using MIDParallel; qfm_spectrum_from_file(dir="/Users/matt/phd/MIDParallel/data/qfm/", qfm_surfs="/Users/matt/phd/MIDParallel/data/qfm/surfaces.jld2")'
->>mpiexec -n 2 julia -e 'using MIDParallel; using MID; qfm_spectrum_from_file(dir="/home/149/mt3516/island_damping/MIDParallel/data/qfm/", qfm_surfs="/home/149/mt3516/island_damping/MIDParallel/data/qfm/qfm_benchmark_surfaces.jld2", target_freq=0.3, nev=200)'
->>mpiexec -n 2 julia -e 'using MIDParallel; qfm_spectrum_from_file(dir="/scratch/y08/mt3516/test/", qfm_surfs="/scratch/y08/mt3516/qfm_data/surfaces/total_chaos_surfs.jld2")'
-"""
-
-
-#now we can actually have a look at this and see what is going on.
-#first process the output
-#%%
-par_post_process(dir_base)
+grids = init_grids(sgrid, ϑgrid, ζgrid)
 #%%
 
-evals = evals_from_file(dir=dir_base);
+#maybe need a guard against this!
+solver = init_solver(prob=prob, full_spectrum=true)
+solver = init_solver(prob=prob, targets=[0.2, 0.3, 0.4], nev=100)
+#%%
 
-continuum_plot(evals)#, ymax=40.5)
 
-ind = find_ind(evals, 0.278)
-ind = find_ind(evals, 0.281)
-ind = find_ind(evals, 0.2818)
+dir_base = "/Users/matt/phd/MIDParallel/data/example/"
+inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
 
-ϕft = efunc_from_file(dir = dir_base, ind=ind);
+par_post_process(dir_base) #unfort have we have to do this!
+#now we can read the data in. first the eigenvalues,
+evals = evals_from_file(dir_base);
 
-potential_plot(ϕft, grids)
+
+scatter(evals.x1, real.(evals.ω))
+ind = find_ind(evals, 0.3)
+ϕft = efunc_from_file(dir_base, ind);
+
+pgrid = MID.inst_grid(sgrid)
+plot(pgrid, real.(ϕft[:, 1, 1]))
+plot!(pgrid, real.(ϕft[:, 2, 1]))
+plot!(pgrid, real.(ϕft[:, 3, 1]))
+#############
+ψgrid = init_grid(:ψ, 80, start=0.25, stop=0.8)
+θgrid = init_grid(:θ, 30)
+φgrid = init_grid(:φ, 10)
+tor_grids = init_grids(ψgrid, θgrid, φgrid)
+#%%
+#pretty sure this only works for fff.
+qfm_spectrum_to_tor(dir_base, tor_grids, "/Users/matt/phd/MID/test/data/benchmark_surfaces.jld2");
+size(ϕ)
+
+evals_tor = evals_from_file(joinpath(dir_base, "tor_map/"));
+
+ϕ_tor = efunc_from_file(joinpath(dir_base, "tor_map/"), 33, ft=false);
+
+p1grid = MID.inst_grid(ψgrid)
+p2grid = MID.inst_grid(θgrid)
+
+#looks kind of shite
+#but shows that the mapping is still working!
+contourf(p2grid, p1grid, real.(ϕ_tor[:, :, 1]))
+
+
+continuum_plot(tor_evals)
+tor_ind = find_ind(tor_evals, 0.25)
+display(ϕft_tor)
+#think these harmonic plots are fkn stoopid.
+harmonic_plot(ϕft_tor, tor_grids, tae_ind, label_max=0.5)
+harmonic_plot(ϕft_tor, tor_grids, cont_ind, label_max=0.5)
+#this is kind of cool
+#maybe shows us that our qfm choice was a bit cooked.
+#i.e. the perturbation was perhaps a bit large.
+contour_plot(ϕ, grids, cont_ind)
+contour_plot(ϕ_tor, tor_grids, cont_ind)

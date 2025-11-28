@@ -1,9 +1,9 @@
 """
-    par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
+    par_solve(P::PetscWrap.PetscMat, Q::PetscWrap.PetscMat, solver::SliceSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
 
-Solve the eigenvalue problem Wϕ = ω^2Iϕ using multiple shift and invert transformation to get 'slices' of the spectrum, allowing efficient solving of a larger portion of the spectrum.
+Solve the eigenvalue problem PΦ = ω^2QΦ using multiple shift and invert transformation to get 'slices' of the spectrum, allowing efficient solving of a larger portion of the spectrum.
 """
-function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
+function par_solve(P::PetscWrap.PetscMat, Q::PetscWrap.PetscMat, solver::SliceSolverT, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec)
 
     nconv = 0
 
@@ -12,7 +12,7 @@ function par_solve(W::PetscWrap.PetscMat, I::PetscWrap.PetscMat, solver::SliceSo
 
     tol = 0.0
     for target in solver.targets
-        eps = create_eps(W, I; auto_setup=true)
+        eps = create_eps(P, Q; auto_setup=true)
 
         EPSSetTarget(eps, target)
 

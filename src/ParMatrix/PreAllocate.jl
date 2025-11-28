@@ -6,9 +6,7 @@ Function that preallocates the number of non-zero elements in the petsc sparse m
 """
 function preallocate_matrix(grids::GridsT)
 
-
     local_n = split_matrix(grids)
-
 
     W = MatCreate()
     I = MatCreate()
@@ -60,7 +58,6 @@ function preallocate_matrix(grids::GridsT)
         dnnz[i] = length(nz_inds[indstart .< nz_inds .<= indend])
         onnz[i] = length(nz_inds[indstart .>= nz_inds])
         onnz[i] += length(nz_inds[nz_inds .> indend])
-
     end
 
     #allocates the memory for the matrices.
@@ -100,7 +97,7 @@ function split_matrix(grids::FFFGridsT)
 
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how indicies per grid point.
+    #block size is how many indicies per grid point.
     local_n = counts[rank+1] * 8 
 
     return local_n
@@ -132,7 +129,7 @@ function split_matrix(grids::FFSGridsT)
 
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how indicies per grid point.
+    #block size is how many indicies per grid point.
     local_n = counts[rank+1] * 4 * grids.x3.N
 
     return local_n
@@ -164,7 +161,7 @@ function split_matrix(grids::FSSGridsT)
 
     MPI.Bcast!(counts, root, comm)
 
-    #block size is how indicies per grid point.
+    #block size is how many indicies per grid point.
     local_n = counts[rank+1] * 2 * grids.x2.N * grids.x3.N
 
     return local_n

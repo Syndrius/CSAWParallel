@@ -1,10 +1,10 @@
 
 """
-    par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
+    par_construct(Pmat::PetscWrap.PetscMat, Qmat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
 
-Constructs the W and I matrices in parallel for the fss case.
+Constructs the P and Q matrices in parallel for the fss case.
 """
-function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
+function par_construct(Pmat::PetscWrap.PetscMat, Qmat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT)
 
     #instantiate the grids into arrays.
     x1grid, x2grid, x3grid = inst_grids(grids)
@@ -17,50 +17,56 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     mlist = mode_list(grids.x2)
     nlist = mode_list(grids.x3)
 
-    #initialise the two structs.
+    #initialise the two structs to store the metric and the magnetic field.
     met = MetT()
     B = BFieldT()
 
-    #compute the gaussian qudrature points for finite elements.
-    ξ, wg = gausslegendre(grids.x1.gp) 
+    #compute the gaussian quadrature points for finite elements.
+    ξ, wg = gauss_points(grids)
 
-    #gets the basis 
+    #Gets the Hermite basis for the radial grid.
     S = hermite_basis(ξ)
 
-    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
+    #array for storing the scaling of the tangent basis functions when transforming
+    #from the local ξ∈[-1, 1] to global x∈[x_i, x_{i+1}] domain
     ts = ones(size(S.H))
-
+    
     #creates the trial and test function arrays.
     #these store the basis functions for each derivative
     #and finite elements basis 
-    Φ = init_basis_function(grids)
-    Ψ = init_basis_function(grids)
-
+    Φ = init_trial_function(grids)
+    Ψ = init_trial_function(grids)
+    
     #arrays to store the row, column and data of each matrix element
-    rows = Array{Int64}(undef, 0) #ints
-    cols = Array{Int64}(undef, 0) #ints
-    Idata = Array{ComplexF64}(undef, 0)
-    Wdata = Array{ComplexF64}(undef, 0)
+    #used for constructing sparse matrices.
+    rows = Array{Int64}(undef, 0) 
+    cols = Array{Int64}(undef, 0) 
+    Qdata = Array{ComplexF64}(undef, 0)
+    Pdata = Array{ComplexF64}(undef, 0)
 
     #determines the indicies in the matrices corresponding to the dirichlet boundary conditions for x1.
     boundary_inds = compute_boundary_inds(grids)
 
-    #generalised eval problem WΦ = ω^2 I Φ
-    #these matrices store the local contribution, i.e. at each grid point, for the global matrices I and W.
-    I = local_matrix_size(grids)
-    W = local_matrix_size(grids)
+    #generalised eval problem PΦ = ω^2 Q Φ
+    #these matrices store the local contribution, i.e. at each grid point, for the global matrices Q and P.
+    Q = init_local_matrix(grids)
+    P = init_local_matrix(grids)
 
-    #plan for the fft
-    p = plan_fft!(W, [4, 5])
-
-    #gets the indicies that this core owns
-    indstart, indend = MatGetOwnershipRange(Wmat)
-
-    #converts the index range into grid points.
-    grid_points = matrix_to_grid(indstart, indend, grids)
+    #creates a fft plan for efficient fft used in spectral method.
+    p = plan_fft!(P, [4, 5])
 
     #initialises a struct storing temporary matrices used in the weak form.
     tm = TM()
+
+    #arrays to store the global quadrature points
+    x1 = zeros(length(ξ)) 
+    Δx = zeros(1)
+
+    #gets the indicies that this core owns
+    indstart, indend = MatGetOwnershipRange(Pmat)
+
+    #converts the index range into grid points.
+    grid_points = matrix_to_grid(indstart, indend, grids)
 
     #now we loop through the grid
     for x1ind in grid_points
@@ -70,28 +76,25 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ array to a global r array around the grid point.
-        x1, Δx1 = local_to_global(x1ind, ξ, x1grid)
-
-        #jacobian of the local to global transformation.
-        jac = Δx1 / 2 
+        jac = local_to_global!(x1, Δx, x1ind, ξ, x1grid)
 
         #computes the contribution to the W and I matrices.
-        W_and_I!(W, I, B, met, prob, x1, x2grid, x3grid, tm)
+        weak_form!(P, Q, B, met, prob, x1, x2grid, x3grid, tm)
 
         #uses the fft plan to take the fft of our two matrices.
-        p * W
-        p * I
+        p * P
+        p * Q
         
         #loop over the fourier components of the trial function
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
-            #adjust the basis functions to the current coordinates/mode numbers considered.
-            create_global_basis!(Φ, S, m1, n1, jac, ts)
+            #transforms the local basis function to the global.
+            update_trial_function!(Φ, S, m1, n1, Δx, ts)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
-                #negatives for conjugate
-                create_global_basis!(Ψ, S, -m2, -n2, jac, ts)
+                #negatives for conjugate in the test function.
+                update_trial_function!(Ψ, S, -m2, -n2, Δx, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nx2, Nx2) + 1
@@ -119,9 +122,8 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 push!(rows, left_ind)
                                 push!(cols, right_ind)
 
-                                push!(Wdata, 1.0 + 0.0im)
-                                push!(Idata, 1.0 + 0.0im)
-                                
+                                push!(Pdata, 1.0 + 0.0im)
+                                push!(Qdata, 1.0 + 0.0im)
                             
                             #otherwise the boundaries are set to zero, which for sparse matrices
                             #is the same as leaving blank.
@@ -133,27 +135,27 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                             else
                                 
                                 #integrate the local contribution to our matrices.
-                                Wsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], W[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                                Psum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], P[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
-                                Isum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], I[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                                Qsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], Q[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
                                 push!(rows, left_ind)
                                 push!(cols, right_ind)
-                                push!(Wdata, Wsum)
-                                push!(Idata, Isum)
+                                push!(Pdata, Psum)
+                                push!(Qdata, Qsum)
                                 
                             end
                         else
                             
                             #integrate the local contribution to our matrices.
-                            Wsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], W[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                            Psum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], P[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
-                            Isum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], I[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                            Qsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], Q[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
                             push!(rows, left_ind)
                             push!(cols, right_ind)
-                            push!(Wdata, Wsum)
-                            push!(Idata, Isum)
+                            push!(Pdata, Psum)
+                            push!(Qdata, Qsum)
                             
                         end
                     end
@@ -163,23 +165,19 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     end
 
     #combine results into global matrix
-    set_values!(Wmat, rows, cols, Wdata) 
-    set_values!(Imat, rows, cols, Idata) 
+    set_values!(Pmat, rows, cols, Pdata) 
+    set_values!(Qmat, rows, cols, Qdata) 
 
 end
 
 
 
 """
-    par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
+    par_construct(Pmat::PetscWrap.PetscMat, Qmat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
 
-Constructs the W and I matrices in parallel with qfm surfaces using the spectral method in ϑ, φ.
+Constructs the P and Q matrices in parallel with qfm surfaces using the spectral method in ϑ, φ.
 """
-function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
-
-    #creates the surfaces interpolation struct from the surfaces
-    #and a temp struct used in the transformation
-    surf_itp, sd = create_surf_itp(surfs)
+function par_construct(Pmat::PetscWrap.PetscMat, Qmat::PetscWrap.PetscMat, prob::ProblemT, grids::FSSGridsT, surfs::Array{QFMSurfaceT})
 
     #instantiate the grids into arrays.
     x1grid, x2grid, x3grid = inst_grids(grids)
@@ -198,50 +196,59 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     qfm_met = MetT()
     qfm_B = BFieldT()
 
-    #compute the gaussian qudrature points for finite elements.
-    ξ, wg = gausslegendre(grids.x1.gp) 
+    #compute the gaussian quadrature points for finite elements.
+    ξ, wg = gauss_points(grids)
 
-    #gets the basis 
+    #Gets the Hermite basis for the radial grid.
     S = hermite_basis(ξ)
 
-    #creates an array for scaling the tangent basis functions when transforming between local and global coordinates.
+    #array for storing the scaling of the tangent basis functions when transforming
+    #from the local ξ∈[-1, 1] to global x∈[x_i, x_{i+1}] domain
     ts = ones(size(S.H))
-
+    
     #creates the trial and test function arrays.
     #these store the basis functions for each derivative
     #and finite elements basis 
-    Φ = init_basis_function(grids)
-    Ψ = init_basis_function(grids)
-
+    Φ = init_trial_function(grids)
+    Ψ = init_trial_function(grids)
+    
     #arrays to store the row, column and data of each matrix element
-    rows = Array{Int64}(undef, 0) #ints
-    cols = Array{Int64}(undef, 0) #ints
-    Idata = Array{ComplexF64}(undef, 0)
-    Wdata = Array{ComplexF64}(undef, 0)
+    #used for constructing sparse matrices.
+    rows = Array{Int64}(undef, 0) 
+    cols = Array{Int64}(undef, 0) 
+    Qdata = Array{ComplexF64}(undef, 0)
+    Pdata = Array{ComplexF64}(undef, 0)
 
     #determines the indicies in the matrices corresponding to the dirichlet boundary conditions for x1.
     boundary_inds = compute_boundary_inds(grids)
 
-    #generalised eval problem WΦ = ω^2 I Φ
-    #these matrices store the local contribution, i.e. at each grid point, for the global matrices I and W.
-    I = local_matrix_size(grids)
-    W = local_matrix_size(grids)
+    #generalised eval problem PΦ = ω^2 Q Φ
+    #these matrices store the local contribution, i.e. at each grid point, for the global matrices Q and P.
+    Q = init_local_matrix(grids)
+    P = init_local_matrix(grids)
 
-
-    #plan for the fft
-    p = plan_fft!(W, [4, 5])
-
-
-    #gets the indicies that this core owns
-    indstart, indend = MatGetOwnershipRange(Wmat)
-
-    #converts the index range into grid points.
-    grid_points = matrix_to_grid(indstart, indend, grids)
+    #creates a fft plan for efficient fft used in spectral method.
+    p = plan_fft!(P, [4, 5])
 
     #initialises a struct storing temporary matrices used in the weak form.
     tm = TM()
+
     #initialise strict for storing the Coordinate transformation between (r, θ, ζ) and (s, ϑ, φ)
     CT = CoordTransformT()
+
+    #arrays to store the global quadrature points
+    x1 = zeros(length(ξ)) 
+    Δx = zeros(1)
+
+    #creates the surfaces interpolation struct from the surfaces
+    #and a temp struct used in the transformation
+    surf_itp, sd = create_surf_itp(surfs)
+
+    #gets the indicies that this core owns
+    indstart, indend = MatGetOwnershipRange(Pmat)
+
+    #converts the index range into grid points.
+    grid_points = matrix_to_grid(indstart, indend, grids)
 
     #now we loop through the grid
     for x1ind in grid_points
@@ -251,28 +258,25 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
         end
 
         #takes the local ξ array to a global r array around the grid point.
-        x1, Δx1 = local_to_global(x1ind, ξ, x1grid)
-
-        #jacobian of the local to global transformation.
-        jac = Δx1 / 2 
+        jac = local_to_global!(x1, Δx, x1ind, ξ, x1grid)
 
         #computes the contribution to the W and I matrices.
-        W_and_I!(W, I, tor_B, tor_met, qfm_B, qfm_met, prob, x1, x2grid, x3grid, tm, surf_itp, CT, sd)
+        weak_form!(P, Q, tor_B, tor_met, qfm_B, qfm_met, prob, x1, x2grid, x3grid, tm, surf_itp, CT, sd)
 
         #uses the fft plan to take the fft of our two matrices.
-        p * W
-        p * I
+        p * P
+        p * Q
         
         #loop over the fourier components of the trial function
         for (k1,m1) in enumerate(mlist), (l1, n1) in enumerate(nlist)
 
-            #adjust the basis functions to the current coordinates/mode numbers considered.
-            create_global_basis!(Φ, S, m1, n1, jac, ts)
+            #transforms the local basis function to the global.
+            update_trial_function!(Φ, S, m1, n1, Δx, ts)
 
             for (k2, m2) in enumerate(mlist), (l2, n2) in enumerate(nlist)
 
-                #negatives for conjugate
-                create_global_basis!(Ψ, S, -m2, -n2, jac, ts)
+                #negatives for conjugate in the test function.
+                update_trial_function!(Ψ, S, -m2, -n2, Δx, ts)
 
                 #extract the relevant indicies from the ffted matrices.
                 mind = mod(k1-k2 + Nx2, Nx2) + 1
@@ -300,10 +304,9 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                                 push!(rows, left_ind)
                                 push!(cols, right_ind)
 
-                                push!(Wdata, 1.0 + 0.0im)
-                                push!(Idata, 1.0 + 0.0im)
+                                push!(Pdata, 1.0 + 0.0im)
+                                push!(Qdata, 1.0 + 0.0im)
                                 
-                            
                             #otherwise the boundaries are set to zero, which for sparse matrices
                             #is the same as leaving blank.
                             elseif left_ind in boundary_inds
@@ -314,27 +317,27 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
                             else
                                 
                                 #integrate the local contribution to our matrices.
-                                Wsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], W[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                                Psum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], P[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
-                                Isum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], I[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                                Qsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], Q[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
                                 push!(rows, left_ind)
                                 push!(cols, right_ind)
-                                push!(Wdata, Wsum)
-                                push!(Idata, Isum)
+                                push!(Pdata, Psum)
+                                push!(Qdata, Qsum)
                                 
                             end
                         else
                             
                             #integrate the local contribution to our matrices.
-                            Wsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], W[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                            Psum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], P[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
-                            Isum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], I[:, :, :, mind, nind], wg, jac, grids.x1.gp)
+                            Qsum = @views gauss_integrate(Ψ[testx1, :, :], Φ[trialx1, :, :], Q[:, :, :, mind, nind], wg, jac, grids.x1.gp)
 
                             push!(rows, left_ind)
                             push!(cols, right_ind)
-                            push!(Wdata, Wsum)
-                            push!(Idata, Isum)
+                            push!(Pdata, Psum)
+                            push!(Qdata, Qsum)
                             
                         end
                     end
@@ -344,7 +347,7 @@ function par_construct(Wmat::PetscWrap.PetscMat, Imat::PetscWrap.PetscMat, prob:
     end
 
     #combine results into global matrix
-    set_values!(Wmat, rows, cols, Wdata) 
-    set_values!(Imat, rows, cols, Idata) 
+    set_values!(Pmat, rows, cols, Pdata) 
+    set_values!(Qmat, rows, cols, Qdata) 
 
 end

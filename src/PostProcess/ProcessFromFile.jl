@@ -1,16 +1,16 @@
 
 """
-    par_post_process(dir::String)
+    par_post_process(dir::String; deriv::Bool=false)
 
 Post processes the parallel solutions that have been written to file.
 This is done outisde the main functions as there is a bug when converting petsc vec's to julia arrays.
 This function is run with a single proc.
 """
-function par_post_process(dir::String, deriv=false)
+function par_post_process(dir::String; deriv::Bool=false)
     mkpath(joinpath(dir, "efuncs"))
     mkpath(joinpath(dir, "efuncs_ft"))
 
-    prob, grids, _ = inputs_from_file(dir=dir)
+    prob, grids, _ = inputs_from_file(dir)
 
     vals = load_object(joinpath(dir, "vals_raw.jld2"))
     nevals = length(vals)
@@ -32,7 +32,6 @@ function par_post_process(dir::String, deriv=false)
     #arrays to store the maximum value of ϕft and the correspondning r value.
     rmarray = Array{Int64}(undef, grids.x2.N, grids.x3.N)
     ϕmarray = Array{Float64}(undef, grids.x2.N, grids.x3.N)
-
     
     #stores the unique inds
     un_inds = Int64[]
@@ -77,7 +76,7 @@ function par_post_process(dir::String, deriv=false)
         efunc_read = @sprintf("efunc%05d.hdf5", un_inds[i]) 
         efunc_write = @sprintf("efunc%05d.jld2", i)
 
-        #unfort doesn't handle complex numbers v well
+        #doesn't handle complex numbers v well
         efunc_split = load_object(joinpath(dir, "efuncs_raw", efunc_read))
 
         #so we manually create the solution properly

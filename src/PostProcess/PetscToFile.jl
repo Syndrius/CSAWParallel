@@ -56,7 +56,6 @@ Writes the solutions to file. Case for slice solve where eigenvalues are added t
 """
 function par_sols_to_file(eps::SlepcWrap.SlepcEPS, dir::String, vecr::PetscWrap.PetscVec, veci::PetscWrap.PetscVec, nconv::Int32, evals::Array{ComplexF64}, errs::Array{Float64})
 
-    #this will get triggered mutiple times.
     if MPI.Comm_rank(MPI.COMM_WORLD) == 0
         #where the efuncs are stored before they are processed.
         mkpath(joinpath(dir, "efuncs_raw")) 
@@ -99,6 +98,11 @@ function write_evals(evals::Array{ComplexF64}, dir::String)
 
 end
 
+"""
+    write_errs(errs::Array{Float64}, dir::String)
+
+Writes the errors to file.
+"""
 function write_errs(errs::Array{Float64}, dir::String)
 
     save_object(joinpath(dir, "errs.jld2"), errs)

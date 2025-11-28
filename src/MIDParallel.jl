@@ -9,30 +9,34 @@ module MIDParallel
 #TODO
 - Add option to save matrices to file, and independently construct or solve matrices.
 - Fix the convertion of c petsc arrays to julia.
+- need to wrie the minimum requirements for a petsc instal
+- need to make sure the main file to run works, and different slepc aregs etc.
+- Write some tests lol.
+- Fix examples -> should be striaghtforward, just want to show that this is the same as MID but from file.
+- Write module descriptions, in particular, the PostProcessing needs a solid description.
 """
 
-
-include("ParMatrix/ParMatrix.jl")
-
-
-
-include("ParConstruct/ParConstruct.jl") 
-
-using ..ParConstruct; export par_construct_surfaces
-using ..ParConstruct; export gather_surfs
-
-
-include("ParPostProcess/ParPostProcess.jl")
-
-using ..ParPostProcess; export par_post_process
+#good
+include("ParMatrix/ParMatrix.jl") #not really happy with this name.
 
 
 
-include("ParSolve/ParSolve.jl") 
+#good
+include("Construct/Construct.jl") 
 
-using ..ParSolve; export par_compute_spectrum
-using ..ParSolve; export qfm_spectrum_from_file
-using ..ParSolve; export par_spectrum_from_file
+
+#good
+include("PostProcess/PostProcess.jl")
+
+using ..PostProcess; export par_post_process
+
+#good
+include("Solve/Solve.jl") 
+
+#good
+include("Spectrum/Spectrum.jl")
+
+using ..Spectrum; export par_compute_spectrum
 
 
 end

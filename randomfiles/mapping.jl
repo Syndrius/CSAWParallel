@@ -5,21 +5,18 @@ using MIDViz
 #%%
 
 #first see if we can get some damn island modes in real small caseo
-geo = init_geo(R0=1000.0)
-k = 0.002
-isl = init_island(m0=2, n0=-1, w=0.03, r0=0.5, qp=2.0)
+geo = init_geo(R0=1.0)
+isl = init_island(m0=1, n0=-1, w=0.1, ψ0=0.5, qp=1.0, flux=true)
 
-#need to fkn fix this by golly
-isl = MID.Geometry.inst_island(isl)
 
 #need to change this
 #prob = MID.Structures.init_isl_problem(geo=geo, isl=isl)
-prob = init_problem(geo=geo, q=MID.Equilibrium.island_mode_21, isl=isl, met=:cylinder)
+prob = init_problem(geo=geo, q=island_q, isl=isl, met=:cylinder)
 #%%
 
-rgrid = init_grid(type=:rf, N=50, sep1=0.4, sep2=0.6, frac=0.5)
+rgrid = init_grid(type=:rf, N=50, sep1=0.45, sep2=0.55, frac=0.5)
 #θgrid = asm_grid(start=-4, N=9)
-θgrid = init_grid(type=:af, N=15, pf=2)
+θgrid = init_grid(type=:af, N=15, pf=1)
 ζgrid = init_grid(type=:af, N=4, pf=-1)
 
 grids = init_grids(rgrid, θgrid, ζgrid)
@@ -34,6 +31,22 @@ inputs_to_file(dir=dir, grids=grids, solver=solver, prob=prob)
 
 #%%
 par_post_process(dir)
+#%%
+Nκ = 51
+Nᾱ = 16
+Nτ = 5
+
+κgrid = init_grid(type=:rf, N=Nκ, stop=0.999)
+ᾱgrid = init_grid(type=:af, N=Nᾱ)
+τgrid = init_grid(type=:af, N=Nτ)
+
+isl_grids = init_grids(κgrid, ᾱgrid, τgrid)
+
+MID.Mapping.qfm_spectrum_to_isl(dir, isl_grids, "/Users/matt/phd/MID/data/surfaces/cantori_island/w1_surfs.jld2")
+
+
+
+
 #%%
 evals = evals_from_file(dir=dir);
 

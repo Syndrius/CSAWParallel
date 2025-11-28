@@ -7,7 +7,7 @@ function compute_nz_inds(ind::Int64, grids::FSSGridsT, inds::UnitRange{Int64}, b
 
 
     #size of the largest block in the sparse matrix,
-    #essentially the numebr of points for each r grid point.
+    #essentially the number of points for each r grid point.
     block_size = compute_block_size(grids)
 
     #which row of blocks we are currently in.
@@ -75,7 +75,7 @@ Computes the indicies of the non-zero elements for a given row of the matrix. Th
 function compute_nz_inds(ind::Int64, grids::FFSGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
 
     #each radial block is made up from Nx2 rows of x2 blocks.
-    #this behaves v similar to FSS case, but we now have periodicity.
+    #this behaves similar to FSS case, but we now have periodicity.
 
     block_size = 4 * grids.x2.N * grids.x3.N
 
@@ -153,9 +153,6 @@ end
 Computes the indicies of the non-zero elements for a given row of the matrix. The non-zeros are split int `blocks` for each radial point. The blocks follow a diagonal pattern. 
 """
 function compute_nz_inds(ind::Int64, grids::FFFGridsT, indslocal::UnitRange{Int64}, boundary_inds::Array{Int64})
-
-    #each radial block is made up from Nx2 rows of x2 blocks.
-    #this behaves v similar to FSS case, but we now have periodicity.
 
     
     #largest blocks, each block is for a single radial point.   

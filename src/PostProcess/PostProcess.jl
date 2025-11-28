@@ -2,20 +2,20 @@
 Module for post processing the solutions found in parallel.
 Notably there is a bug converting the Petsc Vec's into Julia arrays meaning this must be done after each run, reading the results from file.
 """
-module ParPostProcess
+module PostProcess
 
 using Printf
 using JLD2
-
 using MPI
 using PetscWrap
 using SlepcWrap
 using LinearAlgebra
 
+
 using MID.PostProcessing
 using MID.Io
 using MID.Structures
-
+using MID.Grids
 
 
 include("PetscToFile.jl")
