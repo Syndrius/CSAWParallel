@@ -1,85 +1,87 @@
-#this example with the chaos system seems to be working ok.
-using MID
-using MIDParallel
-using Plots
-#%%
-geo = init_geometry(:tor, R0=4.0)
+"""
+Example using Quadratic Flux Minimising (QFM) coordinates.
+"""
 
-#probably cant just use w huh.
-#this would require the root solve shite.
+using ChaoticShearAlfvenWaves
+using CSAWParallel
+using CSAWViz
+
+# QFM surfaces are generated in the companion package CSAWCantori.
+# We have some precomputed used for testing.
+# In parallel we read from file
+surf_dir = abspath(joinpath(pathof(CSAWParallel), "../../test/data/benchmark_surfaces.jld2"))
+
+# This case uses a very large non-resonant perturbation
 isl = init_island(m0=3, n0=1, A=0.1)
-
+geo = init_geometry()
 fields = init_fields(:ψ, q=cantori_q, isl=isl)
-
 prob = init_problem(geometry=geo, fields=fields)
 
-#%%
-
+# We use finite elements for mapping below.
+# The unrealistic perturbation causes issues at the boundaries so we shrink the size.
 sgrid = init_grid(:s, 30, start=0.15, stop=0.9)
-ϑgrid = init_grid(:ϑ, 6, pf=1)
+ϑgrid = init_grid(:ϑ, 5, pf=1)
 ζgrid = init_grid(:ζ, 1, pf=-1)
-#sgrid = init_grid(:s, 100, start=0.15, stop=0.9)
-#ϑgrid = init_grid(:sm, 2, start=1)
-#ζgrid = init_grid(:sm, 1, start=-1)
-#sgrid = init_grid(:s, 40, start=0.15, stop=0.9)
-#ϑgrid = init_grid(:ϑ, 10, pf=1)
-#ζgrid = init_grid(:sm, 1, start=-1)
 
 grids = init_grids(sgrid, ϑgrid, ζgrid)
-#%%
 
-#maybe need a guard against this!
-solver = init_solver(prob=prob, full_spectrum=true)
-solver = init_solver(prob=prob, targets=[0.2, 0.3, 0.4], nev=100)
-#%%
+#in parallel with larger matrix sizes, we cannot solve the full spectrum.
+#we can use shift and invert to target specific eigenvalues
+#or if we want a larger part of the spectrum, we can slice with multiple shift and inverts
+#this initiates the solver to target 0.2, 0.3 and 0.4, with 50 eigenvalues each
+solver = init_solver(prob=prob, targets=[0.2, 0.3, 0.4], nev=50)
 
+#this writes the input into the testing directory
+dir = abspath(joinpath(pathof(CSAWParallel), "../../test/data/"))
+inputs_to_file(dir=dir, prob=prob, grids=grids, solver=solver)
 
-dir_base = "/Users/matt/phd/MIDParallel/data/example/"
-inputs_to_file(prob=prob, grids=grids, solver=solver, dir=dir_base);
+#compute the spectrum
+#also passing in the location of the surfs
+#see examples/run.sh to run this in parallel.
+par_compute_spectrum(dir, surf_dir)
 
-par_post_process(dir_base) #unfort have we have to do this!
-#now we can read the data in. first the eigenvalues,
-evals = evals_from_file(dir_base);
+#the current implementation of PetscWrap.jl does not convert Petsc arrays to julia arrays.
+#this means we have to post process the solutions in serial after solving
+par_post_process(dir)
 
+#load the resuls
+evals = evals_from_file(dir)
 
-scatter(evals.x1, real.(evals.ω))
-ind = find_ind(evals, 0.3)
-ϕft = efunc_from_file(dir_base, ind);
+#despite the perturbation the continuum appears normal
+continuum_plot(evals)
 
-pgrid = MID.inst_grid(sgrid)
-plot(pgrid, real.(ϕft[:, 1, 1]))
-plot!(pgrid, real.(ϕft[:, 2, 1]))
-plot!(pgrid, real.(ϕft[:, 3, 1]))
-#############
+#we look at specific solutions
+#a TAE and a typical continuum solution
+tae_ind = find_ind(evals, 0.25) 
+cont_ind = find_ind(evals, 0.20)
+
+#load the specific solutions
+ϕft_tae = efunc_from_file(dir, tae_ind);
+ϕft_cont = efunc_from_file(dir, cont_ind);
+#and plot
+harmonic_plot(ϕft_tae, grids) 
+harmonic_plot(ϕft_cont, grids)
+
+"""
+We can also Map the solutions back to toroidal coordinates.
+With CSAWParallel output this is done straight from file.
+"""
+
+# Note that this mapping can be slow for large grids.
+# The radial grid is reduced again to prevent issues with interpolation at the edges.
 ψgrid = init_grid(:ψ, 80, start=0.25, stop=0.8)
 θgrid = init_grid(:θ, 30)
 φgrid = init_grid(:φ, 10)
 tor_grids = init_grids(ψgrid, θgrid, φgrid)
-#%%
-#pretty sure this only works for fff.
-qfm_spectrum_to_tor(dir_base, tor_grids, "/Users/matt/phd/MID/test/data/benchmark_surfaces.jld2");
-size(ϕ)
 
-evals_tor = evals_from_file(joinpath(dir_base, "tor_map/"));
+# Map the solutions
+qfm_spectrum_to_tor(dir, tor_grids, surf_dir);
 
-ϕ_tor = efunc_from_file(joinpath(dir_base, "tor_map/"), 33, ft=false);
+#results are written to a subfolder
+map_dir = joinpath(dir, "tor_map/")
 
-p1grid = MID.inst_grid(ψgrid)
-p2grid = MID.inst_grid(θgrid)
+#we can load the mapped solutions as normal
+ϕ_cont_tor = efunc_from_file(map_dir, cont_ind, ft=false);
 
-#looks kind of shite
-#but shows that the mapping is still working!
-contourf(p2grid, p1grid, real.(ϕ_tor[:, :, 1]))
-
-
-continuum_plot(tor_evals)
-tor_ind = find_ind(tor_evals, 0.25)
-display(ϕft_tor)
-#think these harmonic plots are fkn stoopid.
-harmonic_plot(ϕft_tor, tor_grids, tae_ind, label_max=0.5)
-harmonic_plot(ϕft_tor, tor_grids, cont_ind, label_max=0.5)
-#this is kind of cool
-#maybe shows us that our qfm choice was a bit cooked.
-#i.e. the perturbation was perhaps a bit large.
-contour_plot(ϕ, grids, cont_ind)
-contour_plot(ϕ_tor, tor_grids, cont_ind)
+#and plot
+contour_plot(ϕ_cont_tor, tor_grids)

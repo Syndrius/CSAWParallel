@@ -11,9 +11,9 @@ using PetscWrap
 using SlepcWrap
 
 
-using MID.WeakForm
-using MID.Io
-using MID.Grids
+using ChaoticShearAlfvenWaves.WeakForm
+using ChaoticShearAlfvenWaves.Io
+using ChaoticShearAlfvenWaves.Grids
 
 using ..ParMatrix
 using ..Construct

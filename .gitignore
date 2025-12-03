@@ -1,5 +1,8 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
-data
+data/*
 *.swp
+.DS_Store
+*.jld2
+!test/data/benchmark_surfaces.jld2

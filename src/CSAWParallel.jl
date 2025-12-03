@@ -2,13 +2,10 @@
 Parallel extension to MID. Matrices are constructed in parallel with MPI. Grid is split into nproc segments speeding up the construction.
 Matrices are then solved using SlepcWrap.jl, a wrapper for Slepc. This requires that Petsc, Slepc and MPI are all installed externally to julia.
 """
-module MIDParallel
+module CSAWParallel
 
 
 """
-#TODO
-- Add option to save matrices to file, and independently construct or solve matrices.
-- Fix the convertion of c petsc arrays to julia.
 - need to wrie the minimum requirements for a petsc instal
 - need to make sure the main file to run works, and different slepc aregs etc.
 - Write some tests lol.

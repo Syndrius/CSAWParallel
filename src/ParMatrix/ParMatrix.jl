@@ -5,8 +5,8 @@ Module containing functions to handle the matrices in parallel. This includes pr
 module ParMatrix
 
 
-using MID.Structures
-using MID.Grids
+using ChaoticShearAlfvenWaves.Structures
+using ChaoticShearAlfvenWaves.Grids
 
 
 using MPI

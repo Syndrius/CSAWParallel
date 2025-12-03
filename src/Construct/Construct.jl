@@ -9,14 +9,14 @@ using MPI
 using PetscWrap
 using FFTW
 
-using MID.Structures
-using MID.Geometry
-using MID.Fields
-using MID.Basis
-using MID.WeakForm
-using MID.Grids
-using MID.QFM
-using MID.Integration
+using ChaoticShearAlfvenWaves.Structures
+using ChaoticShearAlfvenWaves.Geometry
+using ChaoticShearAlfvenWaves.Fields
+using ChaoticShearAlfvenWaves.Basis
+using ChaoticShearAlfvenWaves.WeakForm
+using ChaoticShearAlfvenWaves.Grids
+using ChaoticShearAlfvenWaves.QFM
+using ChaoticShearAlfvenWaves.Integration
 
 
 using ..ParMatrix

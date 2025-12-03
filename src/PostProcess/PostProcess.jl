@@ -12,10 +12,10 @@ using SlepcWrap
 using LinearAlgebra
 
 
-using MID.PostProcessing
-using MID.Io
-using MID.Structures
-using MID.Grids
+using ChaoticShearAlfvenWaves.PostProcessing
+using ChaoticShearAlfvenWaves.Io
+using ChaoticShearAlfvenWaves.Structures
+using ChaoticShearAlfvenWaves.Grids
 
 
 include("PetscToFile.jl")

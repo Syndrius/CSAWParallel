@@ -4,7 +4,7 @@
 
 #the existance of this file is pretty fkn annoying.
 #unsure how else to implement this tbh.
-using MIDParallel
+using CSAWParallel
 
 #first command line arg is the directory where inputs are stored
 dir = ARGS[1]

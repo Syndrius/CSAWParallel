@@ -6,7 +6,7 @@ using MPI
 using PetscWrap
 using SlepcWrap
 
-using MID.Solve
+using ChaoticShearAlfvenWaves.Solve
 using ..PostProcess
 
 
