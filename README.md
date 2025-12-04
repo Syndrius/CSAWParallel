@@ -1,23 +1,36 @@
-# MIDParallel
-
-[![Build Status](https://github.com/Syndrius/MIDParallel.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Syndrius/MIDParallel.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/Syndrius/MIDParallel.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Syndrius/MIDParallel.jl)
+# CSAWParallel
 
 
-This package was run succesfully with OpenMPI. Typical use case uses
->>mpiexecjl -n (num_procs) julia file_to_run.jl
-This requires mpiexecjl from MPIPreferences.jl. This should run with just mpiexec but untested.
+Companion package for ChaoticShearAlfvenWaves (CSAW).
+This package is a parallel implementation of CSAW, using PETSc and SLEPc.
 
 
-Petsc was configured with 
->>./configure --with-scalar-type=complex --download-superlu --download-superlu_dist 
-May require additional things like fblaspack etc.
+## Installation 
 
-Common issue is that Petsc and MPI.jl must run with the same form of MPI. PetscWrap requires MPI.jl v0.19.2, which is behind the latest version. Set up for this is different from MPI.jl v0.20 but can still be found in the docs.
+To install, within julia, run
+```julia
+] add https://github.com/Syndrius/CSAWParallel.git
+```
+
+## PETSc and SLEPc
+The package requires a pre-installation of petsc, see https://petsc.org/release/install/ and SLEPc, see https://slepc.upv.es/release/installation/index.html.
+
+The minimum requirement for the petsc configuration is
+
+```
+>>configure --with-scalar-type=complex --download-hdf5
+```
+Plus some parallel solver, we have used both superlu_dist and MUMPS, which PETSc can download when configuring with 
+```
+>>configure --with-scalar-type=complex --download-hdf5 --downlaod-superlu --download-superlu_dist --download-mumps
+```
+
+SLEPc is then configured using the PETSc configuration.
+
+These packages are wrapped using PetscWrap.jl, https://github.com/bmxam/PetscWrap.jl,   and SlepcWrap.jl, https://github.com/bmxam/SlepcWrap.jl.
+
+Provided PETSc and SLEPc varibles are set properly, the wrappers should automatically find the libraries, see the above links for troubleshooting.
+
+Note that the current SlepcWrap.jl is constrained to an older version of PetscWrap.jl and to MPI.jl v0.19.2, which has a slightly different installation than the new versions.
 
 
-
-
-MUMPS caused issues, most likely due to 
-https://fenicsproject.discourse.group/t/solve-fails-with-segmentation-fault-11-only-with-mumps/12077
-Superlu is chosen instead as that solves in parallel with our kind of matrices, and petsc is able to do all the installation for us.

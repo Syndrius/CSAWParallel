@@ -1,6 +1,6 @@
 """
 
-Module for constructing the W and I matrices in parallel. Functions are very similar to MID, however, petsc matrices are constructed instead.
+Module for constructing the P and Q matrices in parallel. Functions are very similar to CSAW, except grid is split across cores and petsc matrices are constructed instead.
 """
 module Construct
 
@@ -8,6 +8,7 @@ module Construct
 using MPI
 using PetscWrap
 using FFTW
+
 
 using ChaoticShearAlfvenWaves.Structures
 using ChaoticShearAlfvenWaves.Geometry

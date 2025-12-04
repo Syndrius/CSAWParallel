@@ -1,16 +1,12 @@
-
-#file for running MIDParallel from file.
-#typical use case write the inputs to file then uses this file for execution.
-
-#the existance of this file is pretty fkn annoying.
-#unsure how else to implement this tbh.
+"""
+File to be called called in parallel that simply calls par_compute_spectrum from command line args.
+"""
 using CSAWParallel
 
 #first command line arg is the directory where inputs are stored
 dir = ARGS[1]
 
-#feel like this checking could be done within MIDParallel
-#but maybe this is fine.
+#checks if qfm surfaces have been passed in.
 if length(ARGS) > 1 && occursin("jld2", ARGS[2])
     surfs_dir = ARGS[2]
 

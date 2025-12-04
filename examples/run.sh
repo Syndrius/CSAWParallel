@@ -29,9 +29,9 @@ PROJ=../
 SLEPC_ARGS=""
 
 #basic execution
-mpiexec -n 2 julia --project=$PROJ $file_to_run $data_dir $SLEPC_ARGS
+#mpiexec -n 2 julia --project=$PROJ $file_to_run $data_dir $SLEPC_ARGS
 #execution with qfm coordinates
-#mpiexec -n 2 julia --project=$PROJ $file_to_run $data_dir $surf_dir $SLEPC_ARGS
+mpiexec -n 1 julia --project=$PROJ $file_to_run $data_dir $surf_dir $SLEPC_ARGS
 #execution with precompilation file
 #mpiexec -n 2 julia --project=$PROJ -J$SO $file_to_run $data_dir $SLEPC_ARGS
 

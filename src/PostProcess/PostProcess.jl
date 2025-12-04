@@ -1,8 +1,9 @@
 """
 Module for post processing the solutions found in parallel.
-Notably there is a bug converting the Petsc Vec's into Julia arrays meaning this must be done after each run, reading the results from file.
+Notably the current implementation of PetscWrap.jl does not convert PETSc arrays to Julia arrays, so the raw output is written to file and the post-processing must be done after, in serial.
 """
 module PostProcess
+
 
 using Printf
 using JLD2
@@ -23,6 +24,7 @@ include("PetscToFile.jl")
 export par_sols_to_file
 export write_evals
 export write_errs
+
 
 include("ProcessFromFile.jl")
 

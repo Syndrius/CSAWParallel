@@ -1,7 +1,10 @@
 """
-
+This module acts like the Main.
+Contains the function par_compute_spectrum() which constructs the matrices and solves the eigenvalue problem in parallel.
+Solutions are written to file and require post-processing in serial.
 """
 module Spectrum
+
 
 using Printf
 
@@ -14,6 +17,7 @@ using SlepcWrap
 using ChaoticShearAlfvenWaves.WeakForm
 using ChaoticShearAlfvenWaves.Io
 using ChaoticShearAlfvenWaves.Grids
+
 
 using ..ParMatrix
 using ..Construct
